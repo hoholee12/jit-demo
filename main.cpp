@@ -1,49 +1,48 @@
-#include<stdio.h>
-#include<stdint.h>
-#include<stdlib.h>
-#define PAGE_SIZE 4096
+#include <windows.h>
+#include <vector>
+#include <iostream>
+#include <cstring>
+#include<cstdint>
 
-//code + count = 4kb
-struct asmbuf {
-	uint8_t code[PAGE_SIZE - sizeof(uint64_t)];
-	uint64_t count;
-};
+int main()
+{
+	std::vector<uint8_t> const code =
+	{
+		0xb8,                   // move the following value to EAX:
+		0x05, 0x00, 0x00, 0x00, // 5
+		0xc3                    // return what's currently in EAX
+	};
 
-#ifdef _WIN32
-#include<windows.h>
-struct asmbuf* asmbuf_create(void){
-	DWORD type = MEM_RESERVE | MEM_COMMIT;
-	return VirtualAlloc(NULL, PAGE_SIZE, type, PAGE_READWRITE);
-}
+	SYSTEM_INFO system_info;
+	GetSystemInfo(&system_info);
+	auto const page_size = system_info.dwPageSize;
 
-void asmbuf_finalize(struct asmbuf* buf){
-	DWORD old;
-	VirtualProtect(buf, sizeof(*buf), PAGE_EXECUTE_READ, &old);
-}
+	// prepare the memory in which the machine code will be put (it's not executable yet):
+	void* buffer = VirtualAlloc(nullptr, page_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
-void asmbuf_free(struct asmbuf* buf){
-	VirtualFree(buf, 0, MEM_RELEASE);
-}
+	// copy the machine code into that memory:
+	std::memcpy(buffer, code.data(), code.size());
 
-#else
-#include<sys/mman.h>
-struct asmbuf* asmbuf_create(void){
-	int prot = PROT_READ | PROT_WRITE;
-	int flags = MAP_ANONYMOUS | MAP_PRIVATE;
-	return mmap(NULL, PAGE_SIZE, prot, flags, -1, 0);
-}
+	// mark the memory as executable:
+	DWORD dummy;
+	VirtualProtect(buffer, code.size(), PAGE_EXECUTE_READ, &dummy);
 
-void asmbuf_finalize(struct asmbuf* buf){
-	mprotect(buf, sizeof(*buf), PROT_READ | PROT_EXEC);
-}
+	// interpret the beginning of the (now) executable memory as the entry
+	// point of a function taking no arguments and returning a 4-byte int:
 
-void asmbuf_free(struct asmbuf* buf){
-	munmap(buf, PAGE_SIZE);
-}
-#endif
 
-int main(int argc, char* argv[]){
-	printf("hello,  world!\n");
+	typedef int32_t(*dank)(void);
+	using weed = int32_t(*)(void);
+	dank function_ptr = (weed)buffer;
+	//auto const function_ptr = reinterpret_cast<std::int32_t(*)()>(buffer);
 
-	return 0;
+
+	// call the function and store the result in a local std::int32_t object:
+	auto const result = function_ptr();
+
+	// free the executable memory:
+	VirtualFree(buffer, 0, MEM_RELEASE);
+
+	// use your std::int32_t:
+	std::cout << result << "\n";
 }
