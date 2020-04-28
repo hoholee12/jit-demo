@@ -6,10 +6,21 @@
 
 int main()
 {
+
+	int* myVar = new int();
+	*myVar = 10;
+	uint32_t pointer = (uint32_t)myVar;
+	uint8_t b0, b1, b2, b3;
+	b0 = (pointer & 0x000000ff);
+	b1 = (pointer & 0x0000ff00) >> 8;
+	b2 = (pointer & 0x00ff0000) >> 16;
+	b3 = (pointer & 0xff000000) >> 24;
+
+
 	std::vector<uint8_t> const code =
 	{
-		0xb8,                   // move the following value to EAX:
-		0x05, 0x00, 0x00, 0x00, // 5
+		0xa1,                   // move the following value to EAX:
+		b0, b1, b2, b3, 
 		0xc3                    // return what's currently in EAX
 	};
 
