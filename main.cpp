@@ -1,7 +1,7 @@
 #include <windows.h>
 #include "X86Emitter.h"
 
-class myMain: public X86Emitter{
+class myMain : public X86Emitter{
 public:
 	myMain(){
 		uint8_t fuck = 123;
@@ -10,20 +10,20 @@ public:
 		uint32_t var = (uint32_t)&hello;
 
 		std::vector<uint8_t> code;
-		X86Emitter::loadByteToDwordRegA(&code, &hell);
-		X86Emitter::loadByteToDwordRegB(&code, &var);
+		X86Emitter::loadByteToDwordRegA(&code, hell);
+		X86Emitter::loadByteToDwordRegB(&code, var);
 		X86Emitter::add_ebx_to_eax(&code);
 
-		X86Emitter::mov_memoryval_to_ebx(&code, &var);
-		X86Emitter::mov_al_to_memoryaddr(&code, &var);
-		
+		X86Emitter::mov_imm_to_ebx(&code, var);
+		X86Emitter::mov_al_to_ebxaddr(&code);
+
 		X86Emitter::ret(&code);
 
 		for (int i = 0; i < code.size(); i++){
-			printf("%x ", code.at(i));
+			printf("%02X ", code.at(i));
 		}
 
-		
+
 		SYSTEM_INFO system_info;
 		GetSystemInfo(&system_info);
 		auto const page_size = system_info.dwPageSize;
@@ -56,7 +56,7 @@ public:
 
 		// use your std::int32_t:
 		printf("\n%d %d\n", result, hello);
-		
+
 	}
 
 };
@@ -78,9 +78,9 @@ int main()
 
 	std::vector<uint8_t> const code =
 	{
-		0xa1,                   // move the following value to EAX:
-		b0, b1, b2, b3, 
-		0xc3                    // return what's currently in EAX
+	0xa1,                   // move the following value to EAX:
+	b0, b1, b2, b3,
+	0xc3                    // return what's currently in EAX
 	};
 	*/
 
