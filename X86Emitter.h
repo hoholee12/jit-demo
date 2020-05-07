@@ -53,12 +53,12 @@ public:
 
 	//memoryval must always be dword!
 	//load to register
-	void loadByteToDwordRegA(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov_memoryval_to_al(memoryBlock, dword); movzx_al_to_eax(memoryBlock); }
-	void loadWordToDwordRegA(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov_memoryval_to_ax(memoryBlock, dword); movzx_ax_to_eax(memoryBlock); }
-	void loadDwordToDwordRegA(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov_memoryval_to_eax(memoryBlock, dword); }
-	void loadByteToDwordRegB(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov_memoryval_to_bl(memoryBlock, dword); movzx_bl_to_ebx(memoryBlock); }
-	void loadWordToDwordRegB(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov_memoryval_to_bx(memoryBlock, dword); movzx_bx_to_ebx(memoryBlock); }
-	void loadDwordToDwordRegB(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov_memoryval_to_ebx(memoryBlock, dword); }
+	void loadByteToDwordRegA(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov_memoryaddr_to_al(memoryBlock, dword); movzx_al_to_eax(memoryBlock); }
+	void loadWordToDwordRegA(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov_memoryaddr_to_ax(memoryBlock, dword); movzx_ax_to_eax(memoryBlock); }
+	void loadDwordToDwordRegA(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov_memoryaddr_to_eax(memoryBlock, dword); }
+	void loadByteToDwordRegB(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov_memoryaddr_to_bl(memoryBlock, dword); movzx_bl_to_ebx(memoryBlock); }
+	void loadWordToDwordRegB(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov_memoryaddr_to_bx(memoryBlock, dword); movzx_bx_to_ebx(memoryBlock); }
+	void loadDwordToDwordRegB(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov_memoryaddr_to_ebx(memoryBlock, dword); }
 
 
 	//convert byte to dword
@@ -70,22 +70,22 @@ public:
 	//no need for the opposite
 
 
-	//memoryval must always be dword!
+	//memoryaddr must always be dword!
 	//load store byte
-	void mov_memoryval_to_al(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 5); addByte(0xA0); addDword(dword); }
-	void mov_al_to_memoryval(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 5); addByte(0xA2); addDword(dword); }
-	void mov_memoryval_to_bl(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 6); addByte(0x8A); addByte(0x1D); addDword(dword); }
-	void mov_bl_to_memoryval(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 6); addByte(0x88); addByte(0x1D); addDword(dword); }
+	void mov_memoryaddr_to_al(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 5); addByte(0xA0); addDword(dword); }
+	void mov_al_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 5); addByte(0xA2); addDword(dword); }
+	void mov_memoryaddr_to_bl(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 6); addByte(0x8A); addByte(0x1D); addDword(dword); }
+	void mov_bl_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 6); addByte(0x88); addByte(0x1D); addDword(dword); }
 	//load store word
-	void mov_memoryval_to_ax(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 6); addByte(0x66); addByte(0xA1); addDword(dword); }
-	void mov_ax_to_memoryval(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 6); addByte(0x66); addByte(0xA3); addDword(dword); }
-	void mov_memoryval_to_bx(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 7); addByte(0x66); addByte(0x8B); addByte(0x1D); addDword(dword); }
-	void mov_bx_to_memoryval(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 7); addByte(0x66); addByte(0x89); addByte(0x1D); addDword(dword); }
+	void mov_memoryaddr_to_ax(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 6); addByte(0x66); addByte(0xA1); addDword(dword); }
+	void mov_ax_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 6); addByte(0x66); addByte(0xA3); addDword(dword); }
+	void mov_memoryaddr_to_bx(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 7); addByte(0x66); addByte(0x8B); addByte(0x1D); addDword(dword); }
+	void mov_bx_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 7); addByte(0x66); addByte(0x89); addByte(0x1D); addDword(dword); }
 	//load store dword
-	void mov_memoryval_to_eax(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 5); addByte(0xA1); addDword(dword); }
-	void mov_eax_to_memoryval(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 5); addByte(0xA3); addDword(dword); }
-	void mov_memoryval_to_ebx(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 6); addByte(0x8B); addByte(0x1D); addDword(dword); }
-	void mov_ebx_to_memoryval(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 6); addByte(0x89); addByte(0x1D); addDword(dword); }
+	void mov_memoryaddr_to_eax(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 5); addByte(0xA1); addDword(dword); }
+	void mov_eax_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 5); addByte(0xA3); addDword(dword); }
+	void mov_memoryaddr_to_ebx(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 6); addByte(0x8B); addByte(0x1D); addDword(dword); }
+	void mov_ebx_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 6); addByte(0x89); addByte(0x1D); addDword(dword); }
 
 
 	//load immediate byte
@@ -99,21 +99,15 @@ public:
 	void mov_imm_to_ebx(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 5); addByte(0xBB); addDword(dword); }
 
 
-	//store to addr byte
+	//store to regaddr byte
 	void mov_al_to_ebxaddr(std::vector<uint8_t>* memoryBlock){ init(memoryBlock, 2); addByte(0x88); addByte(0x03); }
 	void mov_bl_to_eaxaddr(std::vector<uint8_t>* memoryBlock){ init(memoryBlock, 2); addByte(0x88); addByte(0x18); }
-	void mov_al_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 7); addByte(0x88); addByte(0x04); addByte(0x25); addDword(dword); }
-	void mov_bl_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 7); addByte(0x88); addByte(0x1C); addByte(0x25); addDword(dword); }
-	//store to addr word
+	//store to regaddr word
 	void mov_ax_to_ebxaddr(std::vector<uint8_t>* memoryBlock){ init(memoryBlock, 3); addByte(0x66);  addByte(0x89); addByte(0x03); }
 	void mov_bx_to_eaxaddr(std::vector<uint8_t>* memoryBlock){ init(memoryBlock, 3); addByte(0x66);  addByte(0x89); addByte(0x18); }
-	void mov_ax_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 8); addByte(0x66); addByte(0x89); addByte(0x04); addByte(0x25); addDword(dword); }
-	void mov_bx_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 8); addByte(0x66); addByte(0x89); addByte(0x1C); addByte(0x25); addDword(dword); }
-	//store to addr dword
+	//store to regaddr dword
 	void mov_eax_to_ebxaddr(std::vector<uint8_t>* memoryBlock){ init(memoryBlock, 2); addByte(0x89); addByte(0x03); }
 	void mov_ebx_to_eaxaddr(std::vector<uint8_t>* memoryBlock){ init(memoryBlock, 2); addByte(0x89); addByte(0x18); }
-	void mov_eax_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 7); addByte(0x89); addByte(0x04); addByte(0x25); addDword(dword); }
-	void mov_ebx_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ init(memoryBlock, 7); addByte(0x89); addByte(0x1C); addByte(0x25); addDword(dword); }
 
 
 	//add dword
