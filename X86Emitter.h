@@ -175,10 +175,13 @@ public:
 
 	enum Direction{ srcToDest, destToSrc = 1 }; //Direction -> srcToDest = 0, destToSrc = 1
 	enum Bitsize{ byteOnly, wordAndDword = 1 }; //Bitsize -> byteOnly = 0, wordAndDword = 1
-	enum Mod{ forDisp = 0x0, byteSignedDisp = 0x1, dwordSignedDisp = 0x2, forReg = 0x3 }; //Mod -> forDisp = 00, byteSignedDisp = 01, dwordSignedDisp = 10, forReg = 11
-	enum X86Regs{ Areg = 0x0, Creg = 0x1, Dreg = 0x2, Breg = 0x3, memaddr = 0x5 }; //X86Regs -> Areg = 000, Creg = 001, Dreg = 010, Breg = 011, memaddr = 101
+	
+	//Mod -> forDisp = 00, byteSignedDisp = 01, dwordSignedDisp = 10, forReg = 11
+	enum Mod{ forDisp = 0x0, byteSignedDisp = 0x1, dwordSignedDisp = 0x2, forReg = 0x3 }; 
 
-
+	//X86Regs -> Areg = 000, Creg = 001, Dreg = 010, Breg = 011, illegal = 100, memaddr = 101
+	enum X86Regs{ Areg = 0x0, Creg = 0x1, Dreg = 0x2, Breg = 0x3, illegal = 0x4, memaddr = 0x5 }; 
+	
 	enum Movsize{ movByte, movWord, movDword }; //for mov only
 
 	//disp or sib
@@ -201,6 +204,8 @@ public:
 		
 	} DispOrSib;
 	DispOrSib dispOrSib;
+
+
 
 	//byte
 	void addExtension(){ addByte(0x0F); }
@@ -499,31 +504,84 @@ public:
 	void dec_edx(std::vector<uint8_t>* memoryBlock){ dec(memoryBlock, destToSrc, byteOnly); }
 
 
-	//bitwise and dword (AB <-> CD)
-	void and_eax_to_ebx(std::vector<uint8_t>* memoryBlock){ init(memoryBlock, 2); addByte(0x21); addByte(0xC3); }
-	void and_ebx_to_eax(std::vector<uint8_t>* memoryBlock){ init(memoryBlock, 2); addByte(0x21); addByte(0xD8); }
-	void and_ecx_to_edx(std::vector<uint8_t>* memoryBlock){ init(memoryBlock, 2); addByte(0x21); addByte(0xCA); }
-	void and_edx_to_ecx(std::vector<uint8_t>* memoryBlock){ init(memoryBlock, 2); addByte(0x21); addByte(0xD1); }
-	//bitwise or dword (AB <-> CD)
-	void or_eax_to_ebx(std::vector<uint8_t>* memoryBlock){ init(memoryBlock, 2); addByte(0x09); addByte(0xC3); }
-	void or_ebx_to_eax(std::vector<uint8_t>* memoryBlock){ init(memoryBlock, 2); addByte(0x09); addByte(0xD8); }
-	void or_ecx_to_edx(std::vector<uint8_t>* memoryBlock){ init(memoryBlock, 2); addByte(0x09); addByte(0xCA); }
-	void or_edx_to_ecx(std::vector<uint8_t>* memoryBlock){ init(memoryBlock, 2); addByte(0x09); addByte(0xD1); }
-	//bitwose xor dword (AB <-> CD)
-	void xor_eax_to_ebx(std::vector<uint8_t>* memoryBlock){ init(memoryBlock, 2); addByte(0x31); addByte(0xC3); }
-	void xor_ebx_to_eax(std::vector<uint8_t>* memoryBlock){ init(memoryBlock, 2); addByte(0x31); addByte(0xD8); }
-	void xor_ecx_to_edx(std::vector<uint8_t>* memoryBlock){ init(memoryBlock, 2); addByte(0x31); addByte(0xCA); }
-	void xor_edx_to_ecx(std::vector<uint8_t>* memoryBlock){ init(memoryBlock, 2); addByte(0x31); addByte(0xD1); }
+	//dword and
+	void dword_and(std::vector<uint8_t>* memoryBlock, Direction direction, Bitsize bitsize, Mod mod, X86Regs src, X86Regs dest){
+		init(memoryBlock, 2);
+		addOpcode(0x20, direction, bitsize); //001000
+		addModrm(mod, src, dest);
+	}
+	//001000 0 1 11 000 011
+	void and_eax_to_ebx(std::vector<uint8_t>* memoryBlock){ dword_and(memoryBlock, srcToDest, wordAndDword, forReg, Areg, Breg); }
+	void and_eax_to_ecx(std::vector<uint8_t>* memoryBlock){ dword_and(memoryBlock, srcToDest, wordAndDword, forReg, Areg, Creg); }
+	void and_eax_to_edx(std::vector<uint8_t>* memoryBlock){ dword_and(memoryBlock, srcToDest, wordAndDword, forReg, Areg, Dreg); }
+	void and_ebx_to_eax(std::vector<uint8_t>* memoryBlock){ dword_and(memoryBlock, srcToDest, wordAndDword, forReg, Breg, Areg); }
+	void and_ebx_to_ecx(std::vector<uint8_t>* memoryBlock){ dword_and(memoryBlock, srcToDest, wordAndDword, forReg, Breg, Creg); }
+	void and_ebx_to_edx(std::vector<uint8_t>* memoryBlock){ dword_and(memoryBlock, srcToDest, wordAndDword, forReg, Breg, Dreg); }
+	void and_ecx_to_eax(std::vector<uint8_t>* memoryBlock){ dword_and(memoryBlock, srcToDest, wordAndDword, forReg, Creg, Areg); }
+	void and_ecx_to_ebx(std::vector<uint8_t>* memoryBlock){ dword_and(memoryBlock, srcToDest, wordAndDword, forReg, Creg, Breg); }
+	void and_ecx_to_edx(std::vector<uint8_t>* memoryBlock){ dword_and(memoryBlock, srcToDest, wordAndDword, forReg, Creg, Dreg); }
+	void and_edx_to_eax(std::vector<uint8_t>* memoryBlock){ dword_and(memoryBlock, srcToDest, wordAndDword, forReg, Dreg, Areg); }
+	void and_edx_to_ebx(std::vector<uint8_t>* memoryBlock){ dword_and(memoryBlock, srcToDest, wordAndDword, forReg, Dreg, Breg); }
+	void and_edx_to_ecx(std::vector<uint8_t>* memoryBlock){ dword_and(memoryBlock, srcToDest, wordAndDword, forReg, Dreg, Creg); }
+	//dword or
+	void dword_or(std::vector<uint8_t>* memoryBlock, Direction direction, Bitsize bitsize, Mod mod, X86Regs src, X86Regs dest){
+		init(memoryBlock, 2);
+		addOpcode(0x08, direction, bitsize); //000010
+		addModrm(mod, src, dest);
+	}
+	//000010 0 1 11 000 011
+	void or_eax_to_ebx(std::vector<uint8_t>* memoryBlock){ dword_or(memoryBlock, srcToDest, wordAndDword, forReg, Areg, Breg); }
+	void or_eax_to_ecx(std::vector<uint8_t>* memoryBlock){ dword_or(memoryBlock, srcToDest, wordAndDword, forReg, Areg, Creg); }
+	void or_eax_to_edx(std::vector<uint8_t>* memoryBlock){ dword_or(memoryBlock, srcToDest, wordAndDword, forReg, Areg, Dreg); }
+	void or_ebx_to_eax(std::vector<uint8_t>* memoryBlock){ dword_or(memoryBlock, srcToDest, wordAndDword, forReg, Breg, Areg); }
+	void or_ebx_to_ecx(std::vector<uint8_t>* memoryBlock){ dword_or(memoryBlock, srcToDest, wordAndDword, forReg, Breg, Creg); }
+	void or_ebx_to_edx(std::vector<uint8_t>* memoryBlock){ dword_or(memoryBlock, srcToDest, wordAndDword, forReg, Breg, Dreg); }
+	void or_ecx_to_eax(std::vector<uint8_t>* memoryBlock){ dword_or(memoryBlock, srcToDest, wordAndDword, forReg, Creg, Areg); }
+	void or_ecx_to_ebx(std::vector<uint8_t>* memoryBlock){ dword_or(memoryBlock, srcToDest, wordAndDword, forReg, Creg, Breg); }
+	void or_ecx_to_edx(std::vector<uint8_t>* memoryBlock){ dword_or(memoryBlock, srcToDest, wordAndDword, forReg, Creg, Dreg); }
+	void or_edx_to_eax(std::vector<uint8_t>* memoryBlock){ dword_or(memoryBlock, srcToDest, wordAndDword, forReg, Dreg, Areg); }
+	void or_edx_to_ebx(std::vector<uint8_t>* memoryBlock){ dword_or(memoryBlock, srcToDest, wordAndDword, forReg, Dreg, Breg); }
+	void or_edx_to_ecx(std::vector<uint8_t>* memoryBlock){ dword_or(memoryBlock, srcToDest, wordAndDword, forReg, Dreg, Creg); }
+	//dword xor
+	void dword_xor(std::vector<uint8_t>* memoryBlock, Direction direction, Bitsize bitsize, Mod mod, X86Regs src, X86Regs dest){
+		init(memoryBlock, 2);
+		addOpcode(0x30, direction, bitsize); //001100
+		addModrm(mod, src, dest);
+	}
+	//001100 0 1 11 000 011
+	void xor_eax_to_ebx(std::vector<uint8_t>* memoryBlock){ dword_xor(memoryBlock, srcToDest, wordAndDword, forReg, Areg, Breg); }
+	void xor_eax_to_ecx(std::vector<uint8_t>* memoryBlock){ dword_xor(memoryBlock, srcToDest, wordAndDword, forReg, Areg, Creg); }
+	void xor_eax_to_edx(std::vector<uint8_t>* memoryBlock){ dword_xor(memoryBlock, srcToDest, wordAndDword, forReg, Areg, Dreg); }
+	void xor_ebx_to_eax(std::vector<uint8_t>* memoryBlock){ dword_xor(memoryBlock, srcToDest, wordAndDword, forReg, Breg, Areg); }
+	void xor_ebx_to_ecx(std::vector<uint8_t>* memoryBlock){ dword_xor(memoryBlock, srcToDest, wordAndDword, forReg, Breg, Creg); }
+	void xor_ebx_to_edx(std::vector<uint8_t>* memoryBlock){ dword_xor(memoryBlock, srcToDest, wordAndDword, forReg, Breg, Dreg); }
+	void xor_ecx_to_eax(std::vector<uint8_t>* memoryBlock){ dword_xor(memoryBlock, srcToDest, wordAndDword, forReg, Creg, Areg); }
+	void xor_ecx_to_ebx(std::vector<uint8_t>* memoryBlock){ dword_xor(memoryBlock, srcToDest, wordAndDword, forReg, Creg, Breg); }
+	void xor_ecx_to_edx(std::vector<uint8_t>* memoryBlock){ dword_xor(memoryBlock, srcToDest, wordAndDword, forReg, Creg, Dreg); }
+	void xor_edx_to_eax(std::vector<uint8_t>* memoryBlock){ dword_xor(memoryBlock, srcToDest, wordAndDword, forReg, Dreg, Areg); }
+	void xor_edx_to_ebx(std::vector<uint8_t>* memoryBlock){ dword_xor(memoryBlock, srcToDest, wordAndDword, forReg, Dreg, Breg); }
+	void xor_edx_to_ecx(std::vector<uint8_t>* memoryBlock){ dword_xor(memoryBlock, srcToDest, wordAndDword, forReg, Dreg, Creg); }
+
+
 	//bitwise shl by immediate dword
-	void shl_imm_eax(std::vector<uint8_t>* memoryBlock, uint8_t byte){ init(memoryBlock, 3); addByte(0xC1); addByte(0xE0); addByte(byte); }
-	void shl_imm_ebx(std::vector<uint8_t>* memoryBlock, uint8_t byte){ init(memoryBlock, 3); addByte(0xC1); addByte(0xE3); addByte(byte); }
-	void shl_imm_ecx(std::vector<uint8_t>* memoryBlock, uint8_t byte){ init(memoryBlock, 3); addByte(0xC1); addByte(0xE1); addByte(byte); }
-	void shl_imm_edx(std::vector<uint8_t>* memoryBlock, uint8_t byte){ init(memoryBlock, 3); addByte(0xC1); addByte(0xE2); addByte(byte); }
+
+	void dword_shift(std::vector<uint8_t>* memoryBlock, Direction direction, Bitsize bitsize, Mod mod, X86Regs src, X86Regs dest){
+		init(memoryBlock, 3);
+		addOpcode(0xC0, direction, bitsize); //110000
+		addModrm(mod, src, dest);
+		addByte(dispOrSib.byte);
+	}
+	//110000 0 1 11 100 000
+	void shl_imm_eax(std::vector<uint8_t>* memoryBlock, uint8_t byte){ dispOrSib = byte; dword_shift(memoryBlock, srcToDest, wordAndDword, forReg, illegal, Areg); }
+	void shl_imm_ebx(std::vector<uint8_t>* memoryBlock, uint8_t byte){ dispOrSib = byte; dword_shift(memoryBlock, srcToDest, wordAndDword, forReg, illegal, Breg); }
+	void shl_imm_ecx(std::vector<uint8_t>* memoryBlock, uint8_t byte){ dispOrSib = byte; dword_shift(memoryBlock, srcToDest, wordAndDword, forReg, illegal, Creg); }
+	void shl_imm_edx(std::vector<uint8_t>* memoryBlock, uint8_t byte){ dispOrSib = byte; dword_shift(memoryBlock, srcToDest, wordAndDword, forReg, illegal, Dreg); }
 	//bitwise shr by immediate dword
-	void shr_imm_eax(std::vector<uint8_t>* memoryBlock, uint8_t byte){ init(memoryBlock, 3); addByte(0xC1); addByte(0xE8); addByte(byte); }
-	void shr_imm_ebx(std::vector<uint8_t>* memoryBlock, uint8_t byte){ init(memoryBlock, 3); addByte(0xC1); addByte(0xEB); addByte(byte); }
-	void shr_imm_ecx(std::vector<uint8_t>* memoryBlock, uint8_t byte){ init(memoryBlock, 3); addByte(0xC1); addByte(0xE9); addByte(byte); }
-	void shr_imm_edx(std::vector<uint8_t>* memoryBlock, uint8_t byte){ init(memoryBlock, 3); addByte(0xC1); addByte(0xEA); addByte(byte); }
+	//110000 0 1 11 101 000
+	void shr_imm_eax(std::vector<uint8_t>* memoryBlock, uint8_t byte){ dispOrSib = byte; dword_shift(memoryBlock, srcToDest, wordAndDword, forReg, memaddr, Areg); }
+	void shr_imm_ebx(std::vector<uint8_t>* memoryBlock, uint8_t byte){ dispOrSib = byte; dword_shift(memoryBlock, srcToDest, wordAndDword, forReg, memaddr, Breg); }
+	void shr_imm_ecx(std::vector<uint8_t>* memoryBlock, uint8_t byte){ dispOrSib = byte; dword_shift(memoryBlock, srcToDest, wordAndDword, forReg, memaddr, Creg); }
+	void shr_imm_edx(std::vector<uint8_t>* memoryBlock, uint8_t byte){ dispOrSib = byte; dword_shift(memoryBlock, srcToDest, wordAndDword, forReg, memaddr, Dreg); }
 
 
 	//return from eax
