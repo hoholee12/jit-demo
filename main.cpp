@@ -4,10 +4,12 @@
 class myMain : public X86Emitter{
 public:
 	myMain(){
+		uint32_t testme = 0;
 		uint8_t fuck = 123;
 		uint8_t hello = 100;
 		uint32_t hell = (uint32_t)&fuck;
 		uint32_t var = (uint32_t)&hello;
+		uint32_t suck = (uint32_t)&testme;
 
 		std::vector<uint8_t> code;
 		X86Emitter::loadByteToDwordRegA(&code, hell);
@@ -16,6 +18,9 @@ public:
 
 		X86Emitter::mov_imm_to_ebx(&code, var);
 		X86Emitter::mov_al_to_ebxaddr(&code);
+
+		X86Emitter::mov_imm_to_ebx(&code, suck);
+		X86Emitter::mov_eax_to_ebxaddr(&code);
 
 		X86Emitter::ret(&code);
 
@@ -55,7 +60,7 @@ public:
 		VirtualFree(buffer, 0, MEM_RELEASE);
 
 		// use your std::int32_t:
-		printf("\n%d %d\n", result, hello);
+		printf("\n%d %d %d\n", result, hello, testme);
 
 	}
 
