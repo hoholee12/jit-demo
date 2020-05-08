@@ -181,6 +181,27 @@ public:
 
 	enum Movsize{ movByte, movWord, movDword }; //for mov only
 
+	//disp or sib
+	typedef struct _DispOrSib{
+		union{
+			uint8_t byte;
+			uint16_t word;
+			uint32_t dword = 0;
+		};
+
+		void operator=(uint32_t dword){
+			this->dword = dword;
+		}
+		void operator=(uint16_t word){
+			this->word = word;
+		}
+		void operator=(uint8_t byte){
+			this->byte = byte;
+		}
+		
+	} DispOrSib;
+	DispOrSib dispOrSib;
+
 	//byte
 	void addExtension(){ addByte(0x0F); }
 	//byte
@@ -246,47 +267,55 @@ public:
 
 
 	//memoryaddr must always be dword!
-	void mov(std::vector<uint8_t>* memoryBlock, Movsize getMovsize, Direction direction, Bitsize bitsize, Mod mod, X86Regs src, X86Regs dest, uint32_t dword = 0){
-		if ((getMovsize == movByte || getMovsize == movDword) && dest == memaddr) init(memoryBlock, 6);
-		else if ((getMovsize == movWord) && dest == memaddr){ init(memoryBlock, 7); addPrefix(); }
+	void mov(std::vector<uint8_t>* memoryBlock, Movsize getMovsize, Direction direction, Bitsize bitsize, Mod mod, X86Regs src, X86Regs dest){
+		if ((getMovsize == movByte || getMovsize == movDword) && dest == memaddr) 
+			init(memoryBlock, 6);
+		else if ((getMovsize == movWord) && dest == memaddr){ 
+			init(memoryBlock, 7);
+			addPrefix();
+		}
 
-		else if (getMovsize == movByte || getMovsize == movDword) init(memoryBlock, 2);
-		else if (getMovsize == movWord){ init(memoryBlock, 3); addPrefix(); }
+		else if (getMovsize == movByte || getMovsize == movDword) 
+			init(memoryBlock, 2);
+		else if (getMovsize == movWord){
+			init(memoryBlock, 3); 
+			addPrefix();
+		}
 		
 		addOpcode(0x88, direction, bitsize); //10001000
 		addModrm(mod, src, dest);
 
-		if (dest == memaddr) addDword(dword);
+		if (dest == memaddr) addDword(dispOrSib.dword);
 	}
 	//load store byte
-	void mov_memoryaddr_to_al(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov(memoryBlock, movByte, destToSrc, byteOnly, forDisp, Areg, memaddr, dword); }
-	void mov_al_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov(memoryBlock, movByte, srcToDest, byteOnly, forDisp, Areg, memaddr, dword); }
-	void mov_memoryaddr_to_bl(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov(memoryBlock, movByte, destToSrc, byteOnly, forDisp, Breg, memaddr, dword); }
-	void mov_bl_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov(memoryBlock, movByte, srcToDest, byteOnly, forDisp, Breg, memaddr, dword); }
-	void mov_memoryaddr_to_cl(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov(memoryBlock, movByte, destToSrc, byteOnly, forDisp, Creg, memaddr, dword); }
-	void mov_cl_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov(memoryBlock, movByte, srcToDest, byteOnly, forDisp, Creg, memaddr, dword); }
-	void mov_memoryaddr_to_dl(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov(memoryBlock, movByte, destToSrc, byteOnly, forDisp, Dreg, memaddr, dword); }
-	void mov_dl_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov(memoryBlock, movByte, srcToDest, byteOnly, forDisp, Dreg, memaddr, dword); }
+	void mov_memoryaddr_to_al(std::vector<uint8_t>* memoryBlock, uint32_t dword){ dispOrSib = dword; mov(memoryBlock, movByte, destToSrc, byteOnly, forDisp, Areg, memaddr); }
+	void mov_al_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ dispOrSib = dword; mov(memoryBlock, movByte, srcToDest, byteOnly, forDisp, Areg, memaddr); }
+	void mov_memoryaddr_to_bl(std::vector<uint8_t>* memoryBlock, uint32_t dword){ dispOrSib = dword; mov(memoryBlock, movByte, destToSrc, byteOnly, forDisp, Breg, memaddr); }
+	void mov_bl_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ dispOrSib = dword; mov(memoryBlock, movByte, srcToDest, byteOnly, forDisp, Breg, memaddr); }
+	void mov_memoryaddr_to_cl(std::vector<uint8_t>* memoryBlock, uint32_t dword){ dispOrSib = dword; mov(memoryBlock, movByte, destToSrc, byteOnly, forDisp, Creg, memaddr); }
+	void mov_cl_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ dispOrSib = dword; mov(memoryBlock, movByte, srcToDest, byteOnly, forDisp, Creg, memaddr); }
+	void mov_memoryaddr_to_dl(std::vector<uint8_t>* memoryBlock, uint32_t dword){ dispOrSib = dword; mov(memoryBlock, movByte, destToSrc, byteOnly, forDisp, Dreg, memaddr); }
+	void mov_dl_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ dispOrSib = dword; mov(memoryBlock, movByte, srcToDest, byteOnly, forDisp, Dreg, memaddr); }
 
 	//load store word
-	void mov_memoryaddr_to_ax(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov(memoryBlock, movWord, destToSrc, wordAndDword, forDisp, Areg, memaddr, dword); }
-	void mov_ax_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov(memoryBlock, movWord, srcToDest, wordAndDword, forDisp, Areg, memaddr, dword); }
-	void mov_memoryaddr_to_bx(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov(memoryBlock, movWord, destToSrc, wordAndDword, forDisp, Breg, memaddr, dword); }
-	void mov_bx_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov(memoryBlock, movWord, srcToDest, wordAndDword, forDisp, Breg, memaddr, dword); }
-	void mov_memoryaddr_to_cx(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov(memoryBlock, movWord, destToSrc, wordAndDword, forDisp, Creg, memaddr, dword); }
-	void mov_cx_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov(memoryBlock, movWord, srcToDest, wordAndDword, forDisp, Creg, memaddr, dword); }
-	void mov_memoryaddr_to_dx(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov(memoryBlock, movWord, destToSrc, wordAndDword, forDisp, Dreg, memaddr, dword); }
-	void mov_dx_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov(memoryBlock, movWord, srcToDest, wordAndDword, forDisp, Dreg, memaddr, dword); }
+	void mov_memoryaddr_to_ax(std::vector<uint8_t>* memoryBlock, uint32_t dword){ dispOrSib = dword; mov(memoryBlock, movWord, destToSrc, wordAndDword, forDisp, Areg, memaddr); }
+	void mov_ax_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ dispOrSib = dword; mov(memoryBlock, movWord, srcToDest, wordAndDword, forDisp, Areg, memaddr); }
+	void mov_memoryaddr_to_bx(std::vector<uint8_t>* memoryBlock, uint32_t dword){ dispOrSib = dword; mov(memoryBlock, movWord, destToSrc, wordAndDword, forDisp, Breg, memaddr); }
+	void mov_bx_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ dispOrSib = dword; mov(memoryBlock, movWord, srcToDest, wordAndDword, forDisp, Breg, memaddr); }
+	void mov_memoryaddr_to_cx(std::vector<uint8_t>* memoryBlock, uint32_t dword){ dispOrSib = dword; mov(memoryBlock, movWord, destToSrc, wordAndDword, forDisp, Creg, memaddr); }
+	void mov_cx_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ dispOrSib = dword; mov(memoryBlock, movWord, srcToDest, wordAndDword, forDisp, Creg, memaddr); }
+	void mov_memoryaddr_to_dx(std::vector<uint8_t>* memoryBlock, uint32_t dword){ dispOrSib = dword; mov(memoryBlock, movWord, destToSrc, wordAndDword, forDisp, Dreg, memaddr); }
+	void mov_dx_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ dispOrSib = dword; mov(memoryBlock, movWord, srcToDest, wordAndDword, forDisp, Dreg, memaddr); }
 
 	//load store dword
-	void mov_memoryaddr_to_eax(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov(memoryBlock, movDword, destToSrc, wordAndDword, forDisp, Areg, memaddr, dword); }
-	void mov_eax_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov(memoryBlock, movDword, srcToDest, wordAndDword, forDisp, Areg, memaddr, dword); }
-	void mov_memoryaddr_to_ebx(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov(memoryBlock, movDword, destToSrc, wordAndDword, forDisp, Breg, memaddr, dword); }
-	void mov_ebx_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov(memoryBlock, movDword, srcToDest, wordAndDword, forDisp, Breg, memaddr, dword); }
-	void mov_memoryaddr_to_ecx(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov(memoryBlock, movDword, destToSrc, wordAndDword, forDisp, Creg, memaddr, dword); }
-	void mov_ecx_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov(memoryBlock, movDword, srcToDest, wordAndDword, forDisp, Creg, memaddr, dword); }
-	void mov_memoryaddr_to_edx(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov(memoryBlock, movDword, destToSrc, wordAndDword, forDisp, Dreg, memaddr, dword); }
-	void mov_edx_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov(memoryBlock, movDword, srcToDest, wordAndDword, forDisp, Dreg, memaddr, dword); }
+	void mov_memoryaddr_to_eax(std::vector<uint8_t>* memoryBlock, uint32_t dword){ dispOrSib = dword; mov(memoryBlock, movDword, destToSrc, wordAndDword, forDisp, Areg, memaddr); }
+	void mov_eax_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ dispOrSib = dword; mov(memoryBlock, movDword, srcToDest, wordAndDword, forDisp, Areg, memaddr); }
+	void mov_memoryaddr_to_ebx(std::vector<uint8_t>* memoryBlock, uint32_t dword){ dispOrSib = dword; mov(memoryBlock, movDword, destToSrc, wordAndDword, forDisp, Breg, memaddr); }
+	void mov_ebx_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ dispOrSib = dword; mov(memoryBlock, movDword, srcToDest, wordAndDword, forDisp, Breg, memaddr); }
+	void mov_memoryaddr_to_ecx(std::vector<uint8_t>* memoryBlock, uint32_t dword){ dispOrSib = dword; mov(memoryBlock, movDword, destToSrc, wordAndDword, forDisp, Creg, memaddr); }
+	void mov_ecx_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ dispOrSib = dword; mov(memoryBlock, movDword, srcToDest, wordAndDword, forDisp, Creg, memaddr); }
+	void mov_memoryaddr_to_edx(std::vector<uint8_t>* memoryBlock, uint32_t dword){ dispOrSib = dword; mov(memoryBlock, movDword, destToSrc, wordAndDword, forDisp, Dreg, memaddr); }
+	void mov_edx_to_memoryaddr(std::vector<uint8_t>* memoryBlock, uint32_t dword){ dispOrSib = dword; mov(memoryBlock, movDword, srcToDest, wordAndDword, forDisp, Dreg, memaddr); }
 
 	//store to regaddr byte (AB <-> CD)
 
@@ -346,28 +375,42 @@ public:
 
 
 
-
 	//kinda different - use Direction and Bitsize to point reg
-	void mov_imm_byte(std::vector<uint8_t>* memoryBlock, Direction direction, Bitsize bitsize, uint8_t byte){ init(memoryBlock, 2); addOpcode(0xB0, direction, bitsize); addByte(byte); }
-	void mov_imm_word(std::vector<uint8_t>* memoryBlock, Direction direction, Bitsize bitsize, uint16_t word){ init(memoryBlock, 4); addPrefix();  addOpcode(0xB8, direction, bitsize); addWord(word); }
-	void mov_imm_dword(std::vector<uint8_t>* memoryBlock, Direction direction, Bitsize bitsize, uint32_t dword){ init(memoryBlock, 5); addOpcode(0xB8, direction, bitsize); addDword(dword); }
+	void mov_imm(std::vector<uint8_t>* memoryBlock, Movsize movsize, Direction direction, Bitsize bitsize){
+		if (movsize == movByte){
+			init(memoryBlock, 2);
+			addOpcode(0xB0, direction, bitsize);
+			addByte(dispOrSib.byte);
+		}
+		else if (movsize == movWord){
+			init(memoryBlock, 4); 
+			addPrefix(); 
+			addOpcode(0xB8, direction, bitsize); 
+			addWord(dispOrSib.word);
+		}
+		else if (movsize == movDword){
+			init(memoryBlock, 5);
+			addOpcode(0xB8, direction, bitsize);
+			addDword(dispOrSib.dword);
+		}
+	}
 	//load immediate byte
-	void mov_imm_to_al(std::vector<uint8_t>* memoryBlock, uint8_t byte){ mov_imm_byte(memoryBlock, Direction::srcToDest, Bitsize::byteOnly, byte); }
-	void mov_imm_to_bl(std::vector<uint8_t>* memoryBlock, uint8_t byte){ mov_imm_byte(memoryBlock, Direction::destToSrc, Bitsize::wordAndDword, byte); }
-	void mov_imm_to_cl(std::vector<uint8_t>* memoryBlock, uint8_t byte){ mov_imm_byte(memoryBlock, Direction::srcToDest, Bitsize::wordAndDword, byte); }
-	void mov_imm_to_dl(std::vector<uint8_t>* memoryBlock, uint8_t byte){ mov_imm_byte(memoryBlock, Direction::destToSrc, Bitsize::byteOnly, byte); }
+	void mov_imm_to_al(std::vector<uint8_t>* memoryBlock, uint8_t byte){ dispOrSib = byte; mov_imm(memoryBlock, movByte, srcToDest, byteOnly); }
+	void mov_imm_to_bl(std::vector<uint8_t>* memoryBlock, uint8_t byte){ dispOrSib = byte; mov_imm(memoryBlock, movByte, destToSrc, wordAndDword); }
+	void mov_imm_to_cl(std::vector<uint8_t>* memoryBlock, uint8_t byte){ dispOrSib = byte; mov_imm(memoryBlock, movByte, srcToDest, wordAndDword); }
+	void mov_imm_to_dl(std::vector<uint8_t>* memoryBlock, uint8_t byte){ dispOrSib = byte; mov_imm(memoryBlock, movByte, destToSrc, byteOnly); }
 
 	//load immediate word
-	void mov_imm_to_ax(std::vector<uint8_t>* memoryBlock, uint16_t word){ mov_imm_word(memoryBlock, Direction::srcToDest, Bitsize::byteOnly, word); }
-	void mov_imm_to_bx(std::vector<uint8_t>* memoryBlock, uint16_t word){ mov_imm_word(memoryBlock, Direction::destToSrc, Bitsize::wordAndDword, word); }
-	void mov_imm_to_cx(std::vector<uint8_t>* memoryBlock, uint16_t word){ mov_imm_word(memoryBlock, Direction::srcToDest, Bitsize::wordAndDword, word); }
-	void mov_imm_to_dx(std::vector<uint8_t>* memoryBlock, uint16_t word){ mov_imm_word(memoryBlock, Direction::destToSrc, Bitsize::byteOnly, word); }
+	void mov_imm_to_ax(std::vector<uint8_t>* memoryBlock, uint16_t word){ dispOrSib = word; mov_imm(memoryBlock, movWord, srcToDest, byteOnly); }
+	void mov_imm_to_bx(std::vector<uint8_t>* memoryBlock, uint16_t word){ dispOrSib = word; mov_imm(memoryBlock, movWord, destToSrc, wordAndDword); }
+	void mov_imm_to_cx(std::vector<uint8_t>* memoryBlock, uint16_t word){ dispOrSib = word; mov_imm(memoryBlock, movWord, srcToDest, wordAndDword); }
+	void mov_imm_to_dx(std::vector<uint8_t>* memoryBlock, uint16_t word){ dispOrSib = word; mov_imm(memoryBlock, movWord, destToSrc, byteOnly); }
 
 	//load immediate dword
-	void mov_imm_to_eax(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov_imm_dword(memoryBlock, Direction::srcToDest, Bitsize::byteOnly, dword); }
-	void mov_imm_to_ebx(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov_imm_dword(memoryBlock, Direction::destToSrc, Bitsize::wordAndDword, dword); }
-	void mov_imm_to_ecx(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov_imm_dword(memoryBlock, Direction::srcToDest, Bitsize::wordAndDword, dword); }
-	void mov_imm_to_edx(std::vector<uint8_t>* memoryBlock, uint32_t dword){ mov_imm_dword(memoryBlock, Direction::destToSrc, Bitsize::byteOnly, dword); }
+	void mov_imm_to_eax(std::vector<uint8_t>* memoryBlock, uint32_t dword){ dispOrSib = dword; mov_imm(memoryBlock, movDword, srcToDest, byteOnly); }
+	void mov_imm_to_ebx(std::vector<uint8_t>* memoryBlock, uint32_t dword){ dispOrSib = dword; mov_imm(memoryBlock, movDword, destToSrc, wordAndDword); }
+	void mov_imm_to_ecx(std::vector<uint8_t>* memoryBlock, uint32_t dword){ dispOrSib = dword; mov_imm(memoryBlock, movDword, srcToDest, wordAndDword); }
+	void mov_imm_to_edx(std::vector<uint8_t>* memoryBlock, uint32_t dword){ dispOrSib = dword; mov_imm(memoryBlock, movDword, destToSrc, byteOnly); }
 
 
 	
