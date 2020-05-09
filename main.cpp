@@ -6,7 +6,7 @@ public:
 	myMain(){
 		uint32_t testme = 0;
 		uint8_t fuck = 123;
-		uint8_t hello = 100;
+		uint8_t hello = 21;
 		uint32_t hell = (uint32_t)&fuck;
 		uint32_t var = (uint32_t)&hello;
 		uint32_t suck = (uint32_t)&testme;
@@ -15,8 +15,9 @@ public:
 		X86Emitter::loadByteToDwordRegA(&code, hell);
 		X86Emitter::loadByteToDwordRegB(&code, var);
 		X86Emitter::add_ebx_to_eax(&code);
-		X86Emitter::mov_imm_to_ecx(&code, 69);
+		X86Emitter::mov_imm_to_ecx(&code, 23);
 		X86Emitter::sub_ecx_to_eax(&code);
+		X86Emitter::jmp(&code, dwordMovImmSize + movByteSize);
 
 		X86Emitter::mov_imm_to_ebx(&code, var);
 		X86Emitter::mov_al_to_ebxaddr(&code);

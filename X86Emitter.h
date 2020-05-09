@@ -232,10 +232,32 @@ public:
 		addByte(opcode);
 	}
 
+	enum OperandSizes{
+		movzxSize = 3,
+		movMemaddrByteSize = 6,
+		movMemaddrDwordSize = 6,
+		movMemaddrWordSize = 7,
+		movByteSize = 2,
+		movDwordSize = 2,
+		movWordSize = 3,
+		dwordMovImmSize = 5,
+		dwordAddSize = 2,
+		dwordAddImmSize = 6,
+		incSize = 1,
+		dwordSubSize = 2,
+		decSize = 1,
+		dwordAndSize = 2,
+		dwordOrSize = 2,
+		dwordXorSize = 2,
+		dwordShiftSize = 3,
+		cmpSize = 2,
+		byteRelJmpSize = 2,
+
+	};
 
 	//no need for the opposite(use only for zeroing out high area)
 	void movzx(vect8* memoryBlock, Direction direction, Bitsize bitsize, Mod mod, X86Regs src, X86Regs dest){
-		init(memoryBlock, 3);
+		init(memoryBlock, movzxSize);
 		addExtension();
 		addOpcode(0xB4, direction, bitsize); //10110100
 		addModrm(mod, src, dest);
@@ -256,16 +278,16 @@ public:
 	//memoryaddr must always be dword!
 	void mov(vect8* memoryBlock, Movsize getMovsize, Direction direction, Bitsize bitsize, Mod mod, X86Regs src, X86Regs dest){
 		if ((getMovsize == movByte || getMovsize == movDword) && dest == memaddr)
-			init(memoryBlock, 6);
+			init(memoryBlock, movMemaddrByteSize);
 		else if ((getMovsize == movWord) && dest == memaddr){
-			init(memoryBlock, 7);
+			init(memoryBlock, movMemaddrWordSize);
 			addPrefix();
 		}
 
 		else if (getMovsize == movByte || getMovsize == movDword)
-			init(memoryBlock, 2);
+			init(memoryBlock, movByteSize);
 		else if (getMovsize == movWord){
-			init(memoryBlock, 3);
+			init(memoryBlock, movWordSize);
 			addPrefix();
 		}
 
@@ -437,7 +459,7 @@ public:
 
 	//kinda different - use Direction and Bitsize to point reg
 	void dword_mov_imm(vect8* memoryBlock, Direction direction, Bitsize bitsize){
-		init(memoryBlock, 5);
+		init(memoryBlock, dwordMovImmSize);
 		addOpcode(0xB8, direction, bitsize);
 		addDword(dispOrSib.dword);
 	}
@@ -451,7 +473,7 @@ public:
 
 	//dword add
 	void dword_add(vect8* memoryBlock, Direction direction, Bitsize bitsize, Mod mod, X86Regs src, X86Regs dest){
-		init(memoryBlock, 2);
+		init(memoryBlock, dwordAddSize);
 		addOpcode(0x00, direction, bitsize); //000000
 		addModrm(mod, src, dest);
 	}
@@ -476,7 +498,7 @@ public:
 
 	//dword imm add
 	void dword_add_imm(vect8* memoryBlock, Direction direction, Bitsize bitsize, Mod mod, X86Regs src, X86Regs dest){
-		init(memoryBlock, 6);
+		init(memoryBlock, dwordAddImmSize);
 		addOpcode(0x80, direction, bitsize);	//100000
 		addModrm(mod, src, dest);
 		addDword(dispOrSib.dword);
@@ -490,7 +512,7 @@ public:
 
 	//dword inc
 	void inc(vect8* memoryBlock, Direction direction, Bitsize bitsize){
-		init(memoryBlock, 1);
+		init(memoryBlock, incSize);
 		addOpcode(0x40, direction, bitsize);
 	}
 	//inc dword
@@ -502,7 +524,7 @@ public:
 
 	//dword sub
 	void dword_sub(vect8* memoryBlock, Direction direction, Bitsize bitsize, Mod mod, X86Regs src, X86Regs dest){
-		init(memoryBlock, 2);
+		init(memoryBlock, dwordSubSize);
 		addOpcode(0x28, direction, bitsize); //001010
 		addModrm(mod, src, dest);
 	}
@@ -526,7 +548,7 @@ public:
 
 	//dword dec
 	void dec(vect8* memoryBlock, Direction direction, Bitsize bitsize){
-		init(memoryBlock, 1);
+		init(memoryBlock, decSize);
 		addOpcode(0x48, direction, bitsize);	//010010 0 0
 	}
 	//dec dword
@@ -538,7 +560,7 @@ public:
 
 	//dword and
 	void dword_and(vect8* memoryBlock, Direction direction, Bitsize bitsize, Mod mod, X86Regs src, X86Regs dest){
-		init(memoryBlock, 2);
+		init(memoryBlock, dwordAndSize);
 		addOpcode(0x20, direction, bitsize); //001000
 		addModrm(mod, src, dest);
 	}
@@ -557,7 +579,7 @@ public:
 	void and_edx_to_ecx(vect8* memoryBlock){ dword_and(memoryBlock, srcToDest, wordAndDword, forReg, Dreg, Creg); }
 	//dword or
 	void dword_or(vect8* memoryBlock, Direction direction, Bitsize bitsize, Mod mod, X86Regs src, X86Regs dest){
-		init(memoryBlock, 2);
+		init(memoryBlock, dwordOrSize);
 		addOpcode(0x08, direction, bitsize); //000010
 		addModrm(mod, src, dest);
 	}
@@ -576,7 +598,7 @@ public:
 	void or_edx_to_ecx(vect8* memoryBlock){ dword_or(memoryBlock, srcToDest, wordAndDword, forReg, Dreg, Creg); }
 	//dword xor
 	void dword_xor(vect8* memoryBlock, Direction direction, Bitsize bitsize, Mod mod, X86Regs src, X86Regs dest){
-		init(memoryBlock, 2);
+		init(memoryBlock, dwordXorSize);
 		addOpcode(0x30, direction, bitsize); //001100
 		addModrm(mod, src, dest);
 	}
@@ -598,7 +620,7 @@ public:
 	//bitwise shl by immediate dword
 
 	void dword_shift(vect8* memoryBlock, Direction direction, Bitsize bitsize, Mod mod, X86Regs src, X86Regs dest){
-		init(memoryBlock, 3);
+		init(memoryBlock, dwordShiftSize);
 		addOpcode(0xC0, direction, bitsize); //110000
 		addModrm(mod, src, dest);
 		addByte(dispOrSib.byte);
@@ -618,7 +640,7 @@ public:
 
 	//cmp
 	void cmp(vect8* memoryBlock, Direction direction, Bitsize bitsize, Mod mod, X86Regs src, X86Regs dest){
-		init(memoryBlock, 2);
+		init(memoryBlock, cmpSize);
 		//cmp eax, ebx 001110 0 1 11 011 000
 		addOpcode(0x38, direction, bitsize);
 		addModrm(mod, src, dest);
@@ -639,7 +661,15 @@ public:
 	void cmp_edx_to_ebx(vect8* memoryBlock){ cmp(memoryBlock, srcToDest, wordAndDword, forReg, Breg, Dreg); }
 	void cmp_edx_to_ecx(vect8* memoryBlock){ cmp(memoryBlock, srcToDest, wordAndDword, forReg, Creg, Dreg); }
 
+
 	//jmp	jump
+	void byte_rel_jmp(vect8* memoryBlock, Direction direction, Bitsize bitsize){
+		init(memoryBlock, byteRelJmpSize);
+		addOpcode(0xE8, direction, bitsize); //111010 0 0
+		addByte(dispOrSib.byte);
+	}
+	//111010 1 1 disp8
+	void jmp(vect8* memoryBlock, uint8_t byte){ dispOrSib = byte; byte_rel_jmp(memoryBlock, destToSrc, wordAndDword); }
 	//je	jump else
 	//jne	jump not else
 	//jb	jump less unsigned
