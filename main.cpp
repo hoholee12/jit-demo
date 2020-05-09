@@ -26,7 +26,7 @@ public:
 		X86Emitter::storeWordArray_AregAsInput(&code, pstack, pstackPointer);
 
 		//ptr <- 0xf
-		X86Emitter::addByteToMemaddr(&code, pstackPointer, 0xf);
+		X86Emitter::addByteToMemaddr(&code, pstackPointer, 0xa);
 
 		//stack[0xf] <- 99
 		X86Emitter::mov_edx_to_eax(&code);
