@@ -1,7 +1,13 @@
 #pragma once
 
 /*
-	super simple and easy to understand x86 emitter
+	super simple and easy to understand x86(non-64bit) emitter - by hoholee12
+
+	https://c9x.me/x86/
+	http://ref.x86asm.net/coder32.html
+	^great reference sites^
+
+	some word instructions are similar with dword instructions and are separated with the existence of prefix(66h) on the first byte.
 
 	http://www.c-jump.com/CIS77/CPU/x86/lecture.html
 	^check this for detailed x86 opcode structures and stuff^
@@ -232,6 +238,7 @@ public:
 		addByte(opcode);
 	}
 
+	//use this template for jmp instructions
 	enum OperandSizes{
 		movzxSize = 3,
 		movMemaddrByteSize = 6,
@@ -260,6 +267,21 @@ public:
 		byteRelJaeSize = 2,
 		byteRelJbSize = 2,
 		byteRelJbeSize = 2,
+
+		/*shortcuts!*/
+		loadByteShortcutSize = movMemaddrByteSize + movzxSize,
+		loadWordShortcutSize = movMemaddrWordSize + movzxSize,
+		loadDwordShortcutSize = movMemaddrDwordSize,
+		loadByteArraySize = dwordMovImmSize + loadByteShortcutSize + dwordAddSize + movByteSize + movzxSize,
+		loadWordArraySize = dwordMovImmSize + loadByteShortcutSize + dwordShiftSize + dwordAddSize + movWordSize + movzxSize,
+		loadDwordArraySize = dwordMovImmSize + loadByteShortcutSize + dwordShiftSize + dwordAddSize + movDwordSize,
+		storeByteArraySize = dwordMovImmSize + loadByteShortcutSize + dwordAddSize + movByteSize,
+		storeWordArraySize = dwordMovImmSize + loadByteShortcutSize + dwordShiftSize + dwordAddSize + movWordSize,
+		storeDwordArraySize = dwordMovImmSize + loadByteShortcutSize + dwordShiftSize + dwordAddSize + movDwordSize,
+		addByteToMemaddrSize = loadByteArraySize + dwordAddImmSize + movMemaddrByteSize,
+		addWordToMemaddrSize = loadWordArraySize + dwordAddImmSize + movMemaddrWordSize,
+		addDwordToMemaddrSize = loadDwordArraySize + dwordAddImmSize + movMemaddrDwordSize
+
 	};
 
 	//no need for the opposite(use only for zeroing out high area)
@@ -445,23 +467,23 @@ public:
 	void mov_edxaddr_to_ebx(vect8* memoryBlock){ mov(memoryBlock, movDword, destToSrc, wordAndDword, forDisp, Breg, Dreg); }
 	void mov_edxaddr_to_ecx(vect8* memoryBlock){ mov(memoryBlock, movDword, destToSrc, wordAndDword, forDisp, Creg, Dreg); }
 
+	//simple dword move
+	void mov_eax_to_ebx(vect8* memoryBlock){ mov(memoryBlock, movDword, srcToDest, wordAndDword, forReg, Areg, Breg); }
+	void mov_eax_to_ecx(vect8* memoryBlock){ mov(memoryBlock, movDword, srcToDest, wordAndDword, forReg, Areg, Creg); }
+	void mov_eax_to_edx(vect8* memoryBlock){ mov(memoryBlock, movDword, srcToDest, wordAndDword, forReg, Areg, Dreg); }
 
-	//easy shortcut to load to register
-	void loadByteToDwordRegA(vect8* memoryBlock, uint32_t dword){ mov_memoryaddr_to_al(memoryBlock, dword); movzx_al_to_eax(memoryBlock); }
-	void loadWordToDwordRegA(vect8* memoryBlock, uint32_t dword){ mov_memoryaddr_to_ax(memoryBlock, dword); movzx_ax_to_eax(memoryBlock); }
-	void loadDwordToDwordRegA(vect8* memoryBlock, uint32_t dword){ mov_memoryaddr_to_eax(memoryBlock, dword); }
+	void mov_ebx_to_eax(vect8* memoryBlock){ mov(memoryBlock, movDword, srcToDest, wordAndDword, forReg, Breg, Areg); }
+	void mov_ebx_to_ecx(vect8* memoryBlock){ mov(memoryBlock, movDword, srcToDest, wordAndDword, forReg, Breg, Creg); }
+	void mov_ebx_to_edx(vect8* memoryBlock){ mov(memoryBlock, movDword, srcToDest, wordAndDword, forReg, Breg, Dreg); }
 
-	void loadByteToDwordRegB(vect8* memoryBlock, uint32_t dword){ mov_memoryaddr_to_bl(memoryBlock, dword); movzx_bl_to_ebx(memoryBlock); }
-	void loadWordToDwordRegB(vect8* memoryBlock, uint32_t dword){ mov_memoryaddr_to_bx(memoryBlock, dword); movzx_bx_to_ebx(memoryBlock); }
-	void loadDwordToDwordRegB(vect8* memoryBlock, uint32_t dword){ mov_memoryaddr_to_ebx(memoryBlock, dword); }
+	void mov_ecx_to_eax(vect8* memoryBlock){ mov(memoryBlock, movDword, srcToDest, wordAndDword, forReg, Creg, Areg); }
+	void mov_ecx_to_ebx(vect8* memoryBlock){ mov(memoryBlock, movDword, srcToDest, wordAndDword, forReg, Creg, Breg); }
+	void mov_ecx_to_edx(vect8* memoryBlock){ mov(memoryBlock, movDword, srcToDest, wordAndDword, forReg, Creg, Dreg); }
 
-	void loadByteToDwordRegC(vect8* memoryBlock, uint32_t dword){ mov_memoryaddr_to_cl(memoryBlock, dword); movzx_cl_to_ecx(memoryBlock); }
-	void loadWordToDwordRegC(vect8* memoryBlock, uint32_t dword){ mov_memoryaddr_to_cx(memoryBlock, dword); movzx_cx_to_ecx(memoryBlock); }
-	void loadDwordToDwordRegC(vect8* memoryBlock, uint32_t dword){ mov_memoryaddr_to_ecx(memoryBlock, dword); }
+	void mov_edx_to_eax(vect8* memoryBlock){ mov(memoryBlock, movDword, srcToDest, wordAndDword, forReg, Dreg, Areg); }
+	void mov_edx_to_ebx(vect8* memoryBlock){ mov(memoryBlock, movDword, srcToDest, wordAndDword, forReg, Dreg, Breg); }
+	void mov_edx_to_ecx(vect8* memoryBlock){ mov(memoryBlock, movDword, srcToDest, wordAndDword, forReg, Dreg, Creg); }
 
-	void loadByteToDwordRegD(vect8* memoryBlock, uint32_t dword){ mov_memoryaddr_to_dl(memoryBlock, dword); movzx_dl_to_edx(memoryBlock); }
-	void loadWordToDwordRegD(vect8* memoryBlock, uint32_t dword){ mov_memoryaddr_to_dx(memoryBlock, dword); movzx_dx_to_edx(memoryBlock); }
-	void loadDwordToDwordRegD(vect8* memoryBlock, uint32_t dword){ mov_memoryaddr_to_edx(memoryBlock, dword); }
 
 
 	//kinda different - use Direction and Bitsize to point reg
@@ -715,5 +737,115 @@ public:
 	//return from eax
 	void ret(vect8* memoryBlock){ init(memoryBlock, 1); addByte(0xC3); }
 
+
+
+
+
+
+	/*
+	
+		shortcuts!
+	
+	
+	*/
+	//easy shortcut to load to register and expand
+	void loadByteToDwordRegA(vect8* memoryBlock, uint32_t dword){ mov_memoryaddr_to_al(memoryBlock, dword); movzx_al_to_eax(memoryBlock); }
+	void loadWordToDwordRegA(vect8* memoryBlock, uint32_t dword){ mov_memoryaddr_to_ax(memoryBlock, dword); movzx_ax_to_eax(memoryBlock); }
+	void loadDwordToDwordRegA(vect8* memoryBlock, uint32_t dword){ mov_memoryaddr_to_eax(memoryBlock, dword); }
+
+	void loadByteToDwordRegB(vect8* memoryBlock, uint32_t dword){ mov_memoryaddr_to_bl(memoryBlock, dword); movzx_bl_to_ebx(memoryBlock); }
+	void loadWordToDwordRegB(vect8* memoryBlock, uint32_t dword){ mov_memoryaddr_to_bx(memoryBlock, dword); movzx_bx_to_ebx(memoryBlock); }
+	void loadDwordToDwordRegB(vect8* memoryBlock, uint32_t dword){ mov_memoryaddr_to_ebx(memoryBlock, dword); }
+
+	void loadByteToDwordRegC(vect8* memoryBlock, uint32_t dword){ mov_memoryaddr_to_cl(memoryBlock, dword); movzx_cl_to_ecx(memoryBlock); }
+	void loadWordToDwordRegC(vect8* memoryBlock, uint32_t dword){ mov_memoryaddr_to_cx(memoryBlock, dword); movzx_cx_to_ecx(memoryBlock); }
+	void loadDwordToDwordRegC(vect8* memoryBlock, uint32_t dword){ mov_memoryaddr_to_ecx(memoryBlock, dword); }
+
+	void loadByteToDwordRegD(vect8* memoryBlock, uint32_t dword){ mov_memoryaddr_to_dl(memoryBlock, dword); movzx_dl_to_edx(memoryBlock); }
+	void loadWordToDwordRegD(vect8* memoryBlock, uint32_t dword){ mov_memoryaddr_to_dx(memoryBlock, dword); movzx_dx_to_edx(memoryBlock); }
+	void loadDwordToDwordRegD(vect8* memoryBlock, uint32_t dword){ mov_memoryaddr_to_edx(memoryBlock, dword); }
+
+	//preferred way to load/store array elements to register, ABC regs will get occupied, backup shit before using.
+	void loadByteArray_AregAsResult(vect8* memoryBlock, uint32_t array, uint32_t arrayptr){
+		mov_imm_to_eax(memoryBlock, array);	//A for array
+		loadByteToDwordRegB(memoryBlock, arrayptr);	//B for arrayptr
+		
+		//shl_imm_ebx(memoryBlock, 1);	//byte
+		add_eax_to_ebx(memoryBlock); //B as target element addr
+		
+		mov_ebxaddr_to_al(memoryBlock);	//to Areg
+		movzx_al_to_eax(memoryBlock);	//expand
+	}
+	//preferred way to load/store array elements to register, ABC regs will get occupied, backup shit before using.
+	void loadWordArray_AregAsResult(vect8* memoryBlock, uint32_t array, uint32_t arrayptr){
+		mov_imm_to_eax(memoryBlock, array);	//A for array
+		loadByteToDwordRegB(memoryBlock, arrayptr);	//B for arrayptr
+
+		shl_imm_ebx(memoryBlock, 1);	//word
+		add_eax_to_ebx(memoryBlock); //B as target element addr
+
+		mov_ebxaddr_to_ax(memoryBlock);	//to Areg
+		movzx_ax_to_eax(memoryBlock);	//expand
+	}
+	//preferred way to load/store array elements to register, ABC regs will get occupied, backup shit before using.
+	void loadDwordArray_AregAsResult(vect8* memoryBlock, uint32_t array, uint32_t arrayptr){
+		mov_imm_to_eax(memoryBlock, array);	//A for array
+		loadByteToDwordRegB(memoryBlock, arrayptr);	//B for arrayptr
+
+		shl_imm_ebx(memoryBlock, 2);	//dword
+		add_eax_to_ebx(memoryBlock); //B as target element addr
+
+		mov_ebxaddr_to_eax(memoryBlock);	//to Areg
+		//movzx_al_to_eax(memoryBlock);		//expand
+	}
+	//preferred way to load/store array elements to register, ABC regs will get occupied, backup shit before using.
+	void storeByteArray_AregAsInput(vect8* memoryBlock, uint32_t array, uint32_t arrayptr){
+		mov_imm_to_ebx(memoryBlock, array);	//B for array
+		loadByteToDwordRegC(memoryBlock, arrayptr); //C for arrayptr
+
+		//shl_imm_ecx(memoryBlock, 1); //byte
+		add_ebx_to_ecx(memoryBlock); //C as target element addr
+
+		mov_al_to_ecxaddr(memoryBlock);		//input to array
+	}
+	//preferred way to load/store array elements to register, ABC regs will get occupied, backup shit before using.
+	void storeWordArray_AregAsInput(vect8* memoryBlock, uint32_t array, uint32_t arrayptr){
+		mov_imm_to_ebx(memoryBlock, array);	//B for array
+		loadByteToDwordRegC(memoryBlock, arrayptr); //C for arrayptr
+
+		shl_imm_ecx(memoryBlock, 1); //word
+		add_ebx_to_ecx(memoryBlock); //C as target element addr
+
+		mov_ax_to_ecxaddr(memoryBlock);		//input to array
+	}
+	//preferred way to load/store array elements to register, ABC regs will get occupied, backup shit before using.
+	void storeDwordArray_AregAsInput(vect8* memoryBlock, uint32_t array, uint32_t arrayptr){
+		mov_imm_to_ebx(memoryBlock, array);	//B for array
+		loadByteToDwordRegC(memoryBlock, arrayptr); //C for arrayptr
+
+		shl_imm_ecx(memoryBlock, 2); //dword
+		add_ebx_to_ecx(memoryBlock); //C as target element addr
+
+		mov_eax_to_ecxaddr(memoryBlock);		//input to array
+	}
+
+	//shortcut to change one piece of memory variable without mumbojumbo, Areg is used.
+	void addByteToMemaddr(vect8* memoryBlock, uint32_t memvar, uint32_t immval){
+		loadByteToDwordRegA(memoryBlock, memvar);
+		add_imm_to_eax(memoryBlock, immval);
+		mov_al_to_memoryaddr(memoryBlock, memvar);
+	}
+	//shortcut to change one piece of memory variable without mumbojumbo, Areg is used.
+	void addWordToMemaddr(vect8* memoryBlock, uint32_t memvar, uint32_t immval){
+		loadWordToDwordRegA(memoryBlock, memvar);
+		add_imm_to_eax(memoryBlock, immval);
+		mov_ax_to_memoryaddr(memoryBlock, memvar);
+	}
+	//shortcut to change one piece of memory variable without mumbojumbo, Areg is used.
+	void addDwordToMemaddr(vect8* memoryBlock, uint32_t memvar, uint32_t immval){
+		loadDwordToDwordRegA(memoryBlock, memvar);
+		add_imm_to_eax(memoryBlock, immval);
+		mov_eax_to_memoryaddr(memoryBlock, memvar);
+	}
 };
 

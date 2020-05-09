@@ -4,33 +4,49 @@
 class myMain : public X86Emitter{
 public:
 	myMain(){
-		uint32_t testme = 0;
-		uint8_t fuck = 123;
-		uint8_t hello = 21;
-		uint32_t hell = (uint32_t)&fuck;
-		uint32_t var = (uint32_t)&hello;
-		uint32_t suck = (uint32_t)&testme;
+		uint16_t stack[0x10] = {0};
+		uint8_t stackPointer = 0x0;
+		uint32_t pstack = (uint32_t)&stack;
+		uint32_t pstackPointer = (uint32_t)&stackPointer;
+
 
 		std::vector<uint8_t> code;
-		X86Emitter::loadByteToDwordRegA(&code, hell);
-		X86Emitter::loadByteToDwordRegB(&code, var);
-		X86Emitter::add_ebx_to_eax(&code);
-		X86Emitter::mov_imm_to_ecx(&code, 23);
-		X86Emitter::sub_ecx_to_eax(&code);
-		X86Emitter::jmp(&code, dwordMovImmSize + movByteSize);
+		
+		
+		X86Emitter::mov_imm_to_ecx(&code, 100);
+		X86Emitter::mov_imm_to_edx(&code, 90);
 
-		X86Emitter::mov_imm_to_ebx(&code, var);
-		X86Emitter::mov_al_to_ebxaddr(&code);
+		//if condition
+		X86Emitter::cmp_ecx_to_edx(&code);
+		X86Emitter::short_jne(&code, movDwordSize + storeWordArraySize);
+		//equal
 
-		X86Emitter::mov_imm_to_ebx(&code, suck);
-		X86Emitter::mov_eax_to_ebxaddr(&code);
+
+		//stack[0] <- 100
+		X86Emitter::mov_ecx_to_eax(&code);
+		X86Emitter::storeWordArray_AregAsInput(&code, pstack, pstackPointer);
+
+		//ptr <- 0xf
+		X86Emitter::addByteToMemaddr(&code, pstackPointer, 0xf);
+		
+		//stack[0xf] <- 99
+		X86Emitter::mov_edx_to_eax(&code);
+		X86Emitter::storeWordArray_AregAsInput(&code, pstack, pstackPointer);
+
+		X86Emitter::short_jmp(&code, loadWordArraySize);
+		//not equal
+
+		//return as 99
+		X86Emitter::loadWordArray_AregAsResult(&code, pstack, pstackPointer);
 
 		X86Emitter::ret(&code);
 
+		//print block
 		for (int i = 0; i < code.size(); i++){
 			printf("%02X ", code.at(i));
 		}
 
+	
 
 		SYSTEM_INFO system_info;
 		GetSystemInfo(&system_info);
@@ -62,8 +78,12 @@ public:
 		// free the executable memory:
 		VirtualFree(buffer, 0, MEM_RELEASE);
 
+		for (int i = 0; i < 0x10; i++){
+			printf("\nstack%d = %d", i, stack[i]);
+		}
+
 		// use your std::int32_t:
-		printf("\n%d %d %d\n", result, hello, testme);
+		printf("\nret = %d stack0 = %d stackf = %d\n", result, stack[0], stack[0xF]);
 
 	}
 
