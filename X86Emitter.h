@@ -252,7 +252,14 @@ public:
 		dwordShiftSize = 3,
 		cmpSize = 2,
 		byteRelJmpSize = 2,
-
+		wordRelJmpSize = 4,
+		dwordRelJmpSize = 5,
+		byteRelJeSize = 2,
+		byteRelJneSize = 2,
+		byteRelJaSize = 2,
+		byteRelJaeSize = 2,
+		byteRelJbSize = 2,
+		byteRelJbeSize = 2,
 	};
 
 	//no need for the opposite(use only for zeroing out high area)
@@ -663,21 +670,47 @@ public:
 
 
 	//jmp	jump
-	void byte_rel_jmp(vect8* memoryBlock, Direction direction, Bitsize bitsize){
-		init(memoryBlock, byteRelJmpSize);
+	void rel_jmp(vect8* memoryBlock, Movsize getMovsize, Direction direction, Bitsize bitsize){
+		if(direction == destToSrc) init(memoryBlock, byteRelJmpSize);
+		if (getMovsize == movWord){ init(memoryBlock, wordRelJmpSize); addPrefix(); }
+		else init(memoryBlock, dwordRelJmpSize);
+
 		addOpcode(0xE8, direction, bitsize); //111010 0 0
-		addByte(dispOrSib.byte);
+		if (direction == destToSrc) addByte(dispOrSib.byte);
+		if (getMovsize == movWord) addWord(dispOrSib.word);
+		else addDword(dispOrSib.dword);
 	}
 	//111010 1 1 disp8
-	void jmp(vect8* memoryBlock, uint8_t byte){ dispOrSib = byte; byte_rel_jmp(memoryBlock, destToSrc, wordAndDword); }
-	//je	jump else
-	//jne	jump not else
+	void short_jmp(vect8* memoryBlock, uint8_t byte){ dispOrSib = byte; rel_jmp(memoryBlock, movByte, destToSrc, wordAndDword); }
+	void near16_jmp(vect8* memoryBlock, uint16_t word){ dispOrSib = word; rel_jmp(memoryBlock, movWord, srcToDest, wordAndDword); }
+	void near32_jmp(vect8* memoryBlock, uint32_t dword){ dispOrSib = dword; rel_jmp(memoryBlock, movDword, srcToDest, wordAndDword); }
+	//je	jump equals
+	//011101 0 0 11 001 011
+	void byte_rel_je(vect8* memoryBlock, Direction direction, Bitsize bitsize){
+		init(memoryBlock, byteRelJeSize);
+		addOpcode(0x74, direction, bitsize);
+		addByte(dispOrSib.byte);
+	}
+	void short_je(vect8* memoryBlock, uint8_t byte){ dispOrSib = byte; byte_rel_je(memoryBlock, srcToDest, byteOnly); }
+	void short_jne(vect8* memoryBlock, uint8_t byte){ dispOrSib = byte; byte_rel_je(memoryBlock, srcToDest, wordAndDword); }
+	//jne	jump not equals
+
 	//jb	jump less unsigned
-	//jbe	jump less equal unsigned
-	//ja	jump greater unsigned
-	//jae	jump greater equal unsigned
+	//jbe	jump less equals unsigned
+	void byte_rel_jb(vect8* memoryBlock, Direction direction, Bitsize bitsize){
+		init(memoryBlock, byteRelJbSize);
+		addOpcode(0x70, direction, bitsize);
+		addByte(dispOrSib.byte);
+	}
+	void short_jb(vect8* memoryBlock, uint8_t byte){ dispOrSib = byte; byte_rel_jb(memoryBlock, destToSrc, byteOnly); }
+	void short_jbe(vect8* memoryBlock, uint8_t byte){ dispOrSib = byte; byte_rel_je(memoryBlock, destToSrc, byteOnly); }
 	
 
+	//ja	jump greater unsigned
+	//jae	jump greater equals unsigned
+	void short_ja(vect8* memoryBlock, uint8_t byte){ dispOrSib = byte; byte_rel_je(memoryBlock, destToSrc, wordAndDword); }
+	void short_jae(vect8* memoryBlock, uint8_t byte){ dispOrSib = byte; byte_rel_jb(memoryBlock, destToSrc, wordAndDword); }
+	
 
 	//return from eax
 	void ret(vect8* memoryBlock){ init(memoryBlock, 1); addByte(0xC3); }
