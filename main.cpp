@@ -11,14 +11,13 @@ public:
 
 
 		std::vector<uint8_t> code;
-		
-		
+
 		X86Emitter::mov_imm_to_ecx(&code, 100);
-		X86Emitter::mov_imm_to_edx(&code, 90);
+		X86Emitter::mov_imm_to_edx(&code, 100);
 
 		//if condition
 		X86Emitter::cmp_ecx_to_edx(&code);
-		X86Emitter::short_jne(&code, movDwordSize + storeWordArraySize);
+		X86Emitter::short_jne(&code, movDwordSize + storeWordArraySize + addByteToMemaddrSize + movDwordSize + storeWordArraySize + byteRelJmpSize);
 		//equal
 
 
@@ -28,7 +27,7 @@ public:
 
 		//ptr <- 0xf
 		X86Emitter::addByteToMemaddr(&code, pstackPointer, 0xf);
-		
+
 		//stack[0xf] <- 99
 		X86Emitter::mov_edx_to_eax(&code);
 		X86Emitter::storeWordArray_AregAsInput(&code, pstack, pstackPointer);

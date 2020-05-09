@@ -269,9 +269,10 @@ public:
 		byteRelJbeSize = 2,
 
 		/*shortcuts!*/
-		loadByteShortcutSize = movMemaddrByteSize + movzxSize,
-		loadWordShortcutSize = movMemaddrWordSize + movzxSize,
-		loadDwordShortcutSize = movMemaddrDwordSize,
+		//one thing to note - memaddr->reg is movXXSize, not movMemaddrXXSize
+		loadByteShortcutSize = movByteSize + movzxSize,
+		loadWordShortcutSize = movWordSize + movzxSize,
+		loadDwordShortcutSize = movDwordSize,
 		loadByteArraySize = dwordMovImmSize + loadByteShortcutSize + dwordAddSize + movByteSize + movzxSize,
 		loadWordArraySize = dwordMovImmSize + loadByteShortcutSize + dwordShiftSize + dwordAddSize + movWordSize + movzxSize,
 		loadDwordArraySize = dwordMovImmSize + loadByteShortcutSize + dwordShiftSize + dwordAddSize + movDwordSize,
@@ -694,12 +695,12 @@ public:
 	//jmp	jump
 	void rel_jmp(vect8* memoryBlock, Movsize getMovsize, Direction direction, Bitsize bitsize){
 		if(direction == destToSrc) init(memoryBlock, byteRelJmpSize);
-		if (getMovsize == movWord){ init(memoryBlock, wordRelJmpSize); addPrefix(); }
+		else if (getMovsize == movWord){ init(memoryBlock, wordRelJmpSize); addPrefix(); }
 		else init(memoryBlock, dwordRelJmpSize);
 
 		addOpcode(0xE8, direction, bitsize); //111010 0 0
 		if (direction == destToSrc) addByte(dispOrSib.byte);
-		if (getMovsize == movWord) addWord(dispOrSib.word);
+		else if (getMovsize == movWord) addWord(dispOrSib.word);
 		else addDword(dispOrSib.dword);
 	}
 	//111010 1 1 disp8
