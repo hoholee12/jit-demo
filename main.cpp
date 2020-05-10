@@ -6,71 +6,27 @@ public:
 	myMain(){
 		uint16_t stack[0x10] = {0};
 		uint8_t stackPointer = 0x0;
-		uint32_t pstack = (uint32_t)&stack;
-		uint32_t pstackPointer = (uint32_t)&stackPointer;
+		uint32_t pstack = (uint32_t)&stack;		//word
+		uint32_t pstackPointer = (uint32_t)&stackPointer;	//byte
 
 
 		std::vector<uint8_t> code;
 
-		X86Emitter::mov_imm_to_ecx(&code, 100);
-		X86Emitter::mov_imm_to_edx(&code, 90);
+		//loop demo
+		X86Emitter::mov_imm_to_edx(&code, 85);
 
-		//if condition
-		X86Emitter::cmp_ecx_to_edx(&code);
-		X86Emitter::short_jne(&code, movDwordSize + storeWordArraySize + addByteToMemaddrSize + subByteToMemaddrSize + movDwordSize + storeWordArraySize + byteRelJmpSize);
-		//equal
-
-			
-		X86Emitter::mov_ecx_to_eax(&code);
-		/*	2bytes
-		e:  89 c8                   mov    eax,ecx
-		*/
-			
-		X86Emitter::storeWordArray_AregAsInput(&code, pstack, pstackPointer);
-		/*	20bytes
-		10: bb e4 fc 4f 00          mov    ebx,0x4ffce4
-		15: 8a 0d db fc 4f 00       mov    cl,BYTE PTR ds:0x4ffcdb
-		1b: 0f b6 c9                movzx  ecx,cl
-		1e: 8d 0c 4b                lea    ecx,[ebx+ecx*2]
-		21: 66 89 01                mov    WORD PTR [ecx],ax
-		*/
-		
-		X86Emitter::addByteToMemaddr(&code, pstackPointer, 0xa);
-		/*	21bytes
-		24: 8a 05 db fc 4f 00       mov    al,BYTE PTR ds:0x4ffcdb
-		2a: 0f b6 c0                movzx  eax,al
-		2d: 81 c0 0a 00 00 00       add    eax,0xa
-		33: 88 05 db fc 4f 00       mov    BYTE PTR ds:0x4ffcdb,al
-		*/
-		X86Emitter::subByteToMemaddr(&code, pstackPointer, 0x1);
-		/*	21bytes
-		39: 8a 05 db fc 4f 00       mov    al,BYTE PTR ds:0x4ffcdb
-		3f: 0f b6 c0                movzx  eax,al
-		42: 81 e8 01 00 00 00       sub    eax,0x1
-		48: 88 05 db fc 4f 00       mov    BYTE PTR ds:0x4ffcdb,al
-		*/
+		//loop starts here
 		X86Emitter::mov_edx_to_eax(&code);
-		/*	2bytes
-		4e: 89 d0                   mov    eax,edx
-		*/
 		X86Emitter::storeWordArray_AregAsInput(&code, pstack, pstackPointer);
-		/*	20bytes
-		50: bb e4 fc 4f 00          mov    ebx,0x4ffce4
-		55: 8a 0d db fc 4f 00       mov    cl,BYTE PTR ds:0x4ffcdb
-		5b: 0f b6 c9                movzx  ecx,cl
-		5e: 8d 0c 4b                lea    ecx,[ebx+ecx*2]
-		61: 66 89 01                mov    WORD PTR [ecx],ax
-		*/
-		X86Emitter::short_jmp(&code, loadWordArraySize);
-		/*	2bytes
-		64: eb 13                   jmp    0x79
-		*/
+		X86Emitter::addByteToMemaddr(&code, pstackPointer, 1);
 
-		//not equal
+		X86Emitter::inc_edx(&code);
+		X86Emitter::mov_imm_to_ecx(&code, 100);
 
-		//return as 99
-		X86Emitter::loadWordArray_AregAsResult(&code, pstack, pstackPointer);
+		X86Emitter::cmp_ecx_to_edx(&code);
+		X86Emitter::short_jae(&code, (byteRelJneSize + cmpSize + incSize + addByteToMemaddrSize + storeWordArraySize + movDwordSize + dwordMovImmSize) * -1);
 
+		//ends here
 		X86Emitter::ret(&code);
 
 		//print block
