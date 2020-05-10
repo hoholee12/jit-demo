@@ -5,7 +5,7 @@ class myMain : public X86Emitter{
 public:
 	myMain(){
 		uint16_t stack[0x10] = {0};
-		uint8_t stackPointer = 0x0;
+		uint8_t stackPointer = 0xf;
 		uint32_t pstack = (uint32_t)&stack;		//word
 		uint32_t pstackPointer = (uint32_t)&stackPointer;	//byte
 
@@ -13,18 +13,18 @@ public:
 		std::vector<uint8_t> code;
 
 		//loop demo
-		X86Emitter::mov_imm_to_edx(&code, 85);
+		X86Emitter::mov_imm_to_edx(&code, 100);
 
 		//loop starts here
 		X86Emitter::mov_edx_to_eax(&code);
 		X86Emitter::storeWordArray_AregAsInput(&code, pstack, pstackPointer);
-		X86Emitter::addByteToMemaddr(&code, pstackPointer, 1);
+		X86Emitter::dec_byte_memaddr(&code, pstackPointer);
 
-		X86Emitter::inc_edx(&code);
-		X86Emitter::mov_imm_to_ecx(&code, 100);
+		X86Emitter::dec_edx(&code);
+		X86Emitter::mov_imm_to_ecx(&code, 85);
 
 		X86Emitter::cmp_ecx_to_edx(&code);
-		X86Emitter::short_jae(&code, (byteRelJneSize + cmpSize + incSize + addByteToMemaddrSize + storeWordArraySize + movDwordSize + dwordMovImmSize) * -1);
+		X86Emitter::short_jbe(&code, (byteRelJneSize + cmpSize + incSize + incByteMemaddrSize + storeWordArraySize + movDwordSize + dwordMovImmSize) * -1);
 
 		//ends here
 		X86Emitter::ret(&code);
