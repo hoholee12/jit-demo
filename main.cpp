@@ -5,7 +5,7 @@ class myMain : public X86Emitter{
 public:
 	myMain(){
 		uint16_t stack[0x10] = {0};
-		uint8_t stackPointer = 0xf;
+		uint8_t stackPointer = 0x0;
 		uint32_t pstack = (uint32_t)&stack;		//word
 		uint32_t pstackPointer = (uint32_t)&stackPointer;	//byte
 
@@ -13,18 +13,20 @@ public:
 		std::vector<uint8_t> code;
 
 		//loop demo
-		X86Emitter::mov_imm_to_edx(&code, 100);
+		X86Emitter::mov_imm(&code, dwordMovImmToDregMode, insertDisp(85)); //copy 85 to D
 
 		//loop starts here
-		X86Emitter::mov_edx_to_eax(&code);
-		X86Emitter::storeWordArray_AregAsInput(&code, pstack, pstackPointer);
-		X86Emitter::dec_byte_memaddr(&code, pstackPointer);
+		int count = 0;
+		count += X86Emitter::mov(&code, movDwordRegToRegMode, Dreg, Areg);			//copy D to A
+		count += X86Emitter::storeWordArray_AregAsInput(&code, pstack, pstackPointer);		//store A to stack
 
-		X86Emitter::dec_edx(&code);
-		X86Emitter::mov_imm_to_ecx(&code, 85);
+		count += X86Emitter::add_imm(&code, dwordAddImmToMemaddrMode, insertAddr(pstackPointer), insertDisp(1));		//increase pointer 1
 
-		X86Emitter::cmp_ecx_to_edx(&code);
-		X86Emitter::short_jbe(&code, (byteRelJneSize + cmpSize + incSize + incByteMemaddrSize + storeWordArraySize + movDwordSize + dwordMovImmSize) * -1);
+		count += X86Emitter::add_imm(&code, dwordAddImmToRegMode, insertDisp(-1), Dreg);	//increase D 1
+		count += X86Emitter::mov_imm(&code, dwordMovImmToCregMode, insertDisp(70));		//copy 100 to C
+
+		count += X86Emitter::cmp(&code, cmpMode, Creg, Dreg);		//cmp C and D
+		X86Emitter::jcc(&code, byteRelJbeMode, insertDisp((byteRelJbeSize + count) * -1)); //keep looping when C is below D
 
 		//ends here
 		X86Emitter::ret(&code);
@@ -71,7 +73,7 @@ public:
 		}
 
 		// use your std::int32_t:
-		printf("\nret = %d stack0 = %d stackf = %d\n", result, stack[0], stack[0xF]);
+		printf("\nret = %d stack0 = %d stackf = %d ptr = %d\n", result, stack[0], stack[0xF], stackPointer);
 
 	}
 
