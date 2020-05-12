@@ -28,7 +28,7 @@ public:
 		count += X86Emitter::cmp(&code, cmpMode, Creg, Dreg);		//cmp C and D
 		X86Emitter::jcc(&code, byteRelJbeMode, insertDisp((byteRelJbeSize + count) * -1)); //keep looping when C is below D
 
-		X86Emitter::ass(&code, "movzx eax, ax");
+		X86Emitter::parse(&code, "movzx eax, ax");
 
 		//ends here
 		X86Emitter::ret(&code);
