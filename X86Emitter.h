@@ -813,6 +813,13 @@ public:
 	}
 	bool isReg(string* str){ return !isImm(str); }
 	bool isMem(string* str){ return (isImm(str) && isPtr(str)); }
+	bool autoInsertExtra(ParserType* parserType, string* str, Disp extra){
+		if (str->find("extra") != string::npos){
+			parserType->disp.dword = extra.dword;
+			return true;
+		}
+		return false;
+	}
 
 	void insertSrc(ParserType* parserType, string* src_str){
 		if (src_str->find("a") != string::npos) parserType->modrm.src = Areg;
@@ -833,7 +840,7 @@ public:
 		else parserType->disp.dword = (uint32_t)std::stoi(*imm_str, 0, 10);
 	}
 
-	void parse_op(ParserType* parserType, string* op_str, string* src_str, string* dest_str){
+	void parse_op(ParserType* parserType, string* op_str, string* src_str, string* dest_str, Disp extra){
 		if (!op_str->compare("movzx")){
 			if (isReg(src_str) && isReg(dest_str)){
 				insertSrc(parserType, src_str); insertDest(parserType, dest_str);
@@ -842,7 +849,7 @@ public:
 				else if (isWord(src_str) && isDword(dest_str))
 					parserType->opmode = movzxWordToDwordMode;
 				
-				else parserType->opmode = noop;
+				
 			}
 		}
 		else if(!op_str->compare("mov")){
@@ -863,7 +870,7 @@ public:
 				else if (isDword(dest_str) && isDword(src_str) && isPtr(src_str))
 					parserType->opmode = movDwordMemToRegMode;
 
-				else parserType->opmode = noop;
+				
 			}
 			//mov_imm
 			else if (isImm(src_str) && isReg(dest_str) && ! isPtr(src_str)){
@@ -872,26 +879,156 @@ public:
 				else if (parserType->modrm.dest == Breg) parserType->opmode = dwordMovImmToBregMode;
 				else if (parserType->modrm.dest == Creg) parserType->opmode = dwordMovImmToCregMode;
 				else if (parserType->modrm.dest == Dreg) parserType->opmode = dwordMovImmToDregMode;
+
+				
 			}
 		}
-		else if(!op_str->compare("add")){ }
-		else if(!op_str->compare("sub")){ }
-		else if(!op_str->compare("and")){ }
-		else if(!op_str->compare("or")){ }
-		else if(!op_str->compare("xor")){ }
-		else if(!op_str->compare("shl")){ }
-		else if (!op_str->compare("shr")){ }
-		else if(!op_str->compare("cmp")){ }
-		else if(!op_str->compare("jmp")){ }
-		else if(!op_str->compare("je")){ }
-		else if (!op_str->compare("jne")){ }
-		else if (!op_str->compare("ja")){ }
-		else if (!op_str->compare("jb")){ }
-		else if (!op_str->compare("jae")){ }
-		else if (!op_str->compare("jbe")){ }
-		else if(!op_str->compare("ret")){ }
-		else if(!op_str->compare("nop")){ }
-		else if(!op_str->compare("lea")){ }
+		else if(!op_str->compare("add")){
+			if (isReg(src_str) && !isPtr(src_str) && isReg(dest_str) && !isPtr(dest_str)){
+				insertSrc(parserType, src_str); insertDest(parserType, dest_str);
+				if (isDword(src_str) && isDword(dest_str)) parserType->opmode = dwordAddMode;
+
+				
+			}
+			else if (isImm(src_str) && !isPtr(src_str) && isReg(dest_str) && !isPtr(dest_str)){
+				insertImm(parserType, src_str); insertDest(parserType, dest_str);
+				if (isDword(dest_str)) parserType->opmode = dwordAddImmToRegMode;
+
+				
+			}
+		}
+		else if(!op_str->compare("sub")){
+			if (isReg(src_str) && !isPtr(src_str) && isReg(dest_str) && !isPtr(dest_str)){
+				insertSrc(parserType, src_str); insertDest(parserType, dest_str);
+				if (isDword(src_str) && isDword(dest_str)) parserType->opmode = dwordSubMode;
+
+				
+			}
+		}
+		else if(!op_str->compare("and")){
+			if (isReg(src_str) && !isPtr(src_str) && isReg(dest_str) && !isPtr(dest_str)){
+				insertSrc(parserType, src_str); insertDest(parserType, dest_str);
+				if (isDword(src_str) && isDword(dest_str)) parserType->opmode = dwordAndMode;
+
+				
+			}
+		}
+		else if(!op_str->compare("or")){ 
+			if (isReg(src_str) && !isPtr(src_str) && isReg(dest_str) && !isPtr(dest_str)){
+				insertSrc(parserType, src_str); insertDest(parserType, dest_str);
+				if (isDword(src_str) && isDword(dest_str)) parserType->opmode = dwordOrMode;
+
+				
+			}
+		}
+		else if(!op_str->compare("xor")){ 
+			if (isReg(src_str) && !isPtr(src_str) && isReg(dest_str) && !isPtr(dest_str)){
+				insertSrc(parserType, src_str); insertDest(parserType, dest_str);
+				if (isDword(src_str) && isDword(dest_str)) parserType->opmode = dwordXorMode;
+
+				
+			}
+		}
+		else if(!op_str->compare("shl")){ 
+			if (isImm(src_str) && !isPtr(src_str) && isReg(dest_str) && !isPtr(dest_str)){
+				insertImm(parserType, src_str); insertDest(parserType, dest_str);
+				if (isDword(dest_str)) parserType->opmode = dwordShiftLeftMode;
+
+				
+			}
+		}
+		else if (!op_str->compare("shr")){ 
+			if (isImm(src_str) && !isPtr(src_str) && isReg(dest_str) && !isPtr(dest_str)){
+				insertImm(parserType, src_str); insertDest(parserType, dest_str);
+				if (isDword(dest_str)) parserType->opmode = dwordShiftRightMode;
+
+				
+			}
+		}
+		else if(!op_str->compare("cmp")){
+			if (isReg(src_str) && !isPtr(src_str) && isReg(dest_str) && !isPtr(dest_str)){
+				insertSrc(parserType, dest_str); insertDest(parserType, src_str);	//inversion
+				if (isDword(src_str), isDword(dest_str)) parserType->opmode = cmpMode;
+
+				
+			}
+		}
+
+		//src_str is empty in operand with one input
+		else if(!op_str->compare("jmp")){ 
+			if (isImm(dest_str) && !isPtr(dest_str)){
+				if (autoInsertExtra(parserType, dest_str, extra)) parserType->opmode = byteRelJmpMode;
+				else insertImm(parserType, dest_str); //if its not extra then insert imm
+				if (isByte(dest_str)) parserType->opmode = byteRelJmpMode;
+				else if (isWord(dest_str)) parserType->opmode = wordRelJmpMode;
+				else if (isDword(dest_str)) parserType->opmode = dwordRelJmpMode;
+
+				
+			}
+		}
+		else if(!op_str->compare("je")){ 
+			if (isImm(dest_str) && !isPtr(dest_str)){
+				if (autoInsertExtra(parserType, dest_str, extra)) parserType->opmode = byteRelJeMode;
+				else insertImm(parserType, dest_str); //if its not extra then insert imm
+				if (isByte(dest_str)) parserType->opmode = byteRelJeMode;
+
+				
+			}
+		}
+		else if (!op_str->compare("jne")){ 
+			if (isImm(dest_str) && !isPtr(dest_str)){
+				if (autoInsertExtra(parserType, dest_str, extra)) parserType->opmode = byteRelJneMode;
+				else insertImm(parserType, dest_str); //if its not extra then insert imm
+				if (isByte(dest_str)) parserType->opmode = byteRelJneMode;
+
+				
+			}
+		}
+		else if (!op_str->compare("ja")){ 
+			if (isImm(dest_str) && !isPtr(dest_str)){
+				if (autoInsertExtra(parserType, dest_str, extra)) parserType->opmode = byteRelJaMode;
+				else insertImm(parserType, dest_str); //if its not extra then insert imm
+				if (isByte(dest_str)) parserType->opmode = byteRelJaMode;
+
+				
+			}
+		}
+		else if (!op_str->compare("jb")){ 
+			if (isImm(dest_str) && !isPtr(dest_str)){
+				if (autoInsertExtra(parserType, dest_str, extra)) parserType->opmode = byteRelJbMode;
+				else insertImm(parserType, dest_str); //if its not extra then insert imm
+				if (isByte(dest_str)) parserType->opmode = byteRelJbMode;
+
+				
+			}
+		}
+		else if (!op_str->compare("jae")){ 
+			if (isImm(dest_str) && !isPtr(dest_str)){
+				if (autoInsertExtra(parserType, dest_str, extra)) parserType->opmode = byteRelJaeMode;
+				else insertImm(parserType, dest_str); //if its not extra then insert imm
+				if (isByte(dest_str)) parserType->opmode = byteRelJaeMode;
+
+				
+			}
+		}
+		else if (!op_str->compare("jbe")){ 
+			if (isImm(dest_str) && !isPtr(dest_str)){
+				if (autoInsertExtra(parserType, dest_str, extra)) parserType->opmode = byteRelJbeMode;
+				else insertImm(parserType, dest_str); //if its not extra then insert imm
+				if (isByte(dest_str)) parserType->opmode = byteRelJbeMode;
+
+				
+			}
+		}
+		else if(!op_str->compare("ret")){ 
+			parserType->opmode = retMode;
+		}
+		else if(!op_str->compare("nop")){ 
+			parserType->opmode = nopMode;
+		}
+		else if(!op_str->compare("lea")){
+			parserType->opmode = leaWithDispMode;
+		}
 
 	}
 
@@ -908,7 +1045,7 @@ public:
 		case movToMemaddrWordMode: 
 		case movFromMemaddrByteMode: 
 		case movFromMemaddrDwordMode: 
-		case movFromMemaddrWordMode: return opmodeError("not supported by parser");
+		case movFromMemaddrWordMode: return opmodeError("not supported by parser...yet");
 		case movDwordRegToRegMode: 
 		case movByteRegToMemMode: 
 		case movDwordRegToMemMode: 
@@ -920,32 +1057,35 @@ public:
 		case dwordMovImmToBregMode: 
 		case dwordMovImmToCregMode: 
 		case dwordMovImmToDregMode: return mov_imm(memoryBlock, parserType->opmode, parserType->disp);
-		case dwordAddMode: 
-		case dwordAddImmToRegMode: 
+		case dwordAddMode: return add(memoryBlock, parserType->opmode, parserType->modrm.src, parserType->modrm.dest);
+		case dwordAddImmToRegMode: return add_imm(memoryBlock, parserType->opmode, parserType->disp, parserType->modrm.dest);
 		case byteAddImmToMemaddrMode: 
 		case wordAddImmToMemaddrMode: 
-		case dwordAddImmToMemaddrMode: 
-		case dwordSubMode: 
-		case dwordAndMode: 
-		case dwordOrMode: 
-		case dwordXorMode: 
+		case dwordAddImmToMemaddrMode: return opmodeError("not supported by parser...yet");
+		case dwordSubMode: return sub(memoryBlock, parserType->opmode, parserType->modrm.src, parserType->modrm.dest);
+		case dwordAndMode: return and(memoryBlock, parserType->opmode, parserType->modrm.src, parserType->modrm.dest);
+		case dwordOrMode: return or(memoryBlock, parserType->opmode, parserType->modrm.src, parserType->modrm.dest);
+		case dwordXorMode: return xor(memoryBlock, parserType->opmode, parserType->modrm.src, parserType->modrm.dest);
 		case dwordShiftLeftMode: 
-		case dwordShiftRightMode: 
-		case cmpMode: 
+		case dwordShiftRightMode: return shift(memoryBlock, parserType->opmode, parserType->disp, parserType->modrm.dest);
+		case cmpMode: return cmp(memoryBlock, parserType->opmode, parserType->modrm.src, parserType->modrm.dest);
 		case byteRelJmpMode: 
 		case wordRelJmpMode: 
-		case dwordRelJmpMode: 
+		case dwordRelJmpMode: return jmp(memoryBlock, parserType->opmode, parserType->disp);
 		case byteRelJeMode: 
 		case byteRelJneMode: 
 		case byteRelJaMode: 
-		case byteRelJaeMode: 
-		case byteRelJbMode: 
-		case byteRelJbeMode: 
-		case leaWithDispMode: 
-		case leaWithoutDispMode: 
+		case byteRelJbeMode: return jcc(memoryBlock, parserType->opmode, parserType->disp);
 
-		case retMode: 
-		case nopMode: 
+		case byteRelJbMode:
+		case byteRelJaeMode: return jcc2(memoryBlock, parserType->opmode, parserType->disp);
+		
+		
+		case leaWithDispMode: 
+		case leaWithoutDispMode: return opmodeError("i dont want to parse this... please use lea() instead");
+
+		case retMode: return ret(memoryBlock);
+		case nopMode: return nop(memoryBlock);
 		
 		default: opmodeError("parse"); return none;
 		}
@@ -964,7 +1104,7 @@ public:
 		return str.substr(first, (last - first + 1));
 	}
 
-	OperandSizes parse(vect8* memoryBlock, const char* str){
+	OperandSizes parse(vect8* memoryBlock, const char* str, Disp extra = Disp()){
 		ParserType parserType;
 		string op_str;
 		string src_str;
@@ -979,9 +1119,10 @@ public:
 		dest_str = trim(dest_str);
 		op_str = input.substr(0, input.find(" "));
 		op_str = trim(op_str);
+		if (src_str.find(op_str) != string::npos) src_str.clear();	//hax
 
 		//to op
-		parse_op(&parserType, &op_str, &src_str, &dest_str);
+		parse_op(&parserType, &op_str, &src_str, &dest_str, extra);
 
 		return run_op(memoryBlock, &parserType);
 

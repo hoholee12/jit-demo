@@ -25,8 +25,9 @@ public:
 		count += X86Emitter::add_imm(&code, dwordAddImmToRegMode, insertDisp(-1), Dreg);	//increase D 1
 		count += X86Emitter::mov_imm(&code, dwordMovImmToCregMode, insertDisp(70));		//copy 100 to C
 
-		count += X86Emitter::cmp(&code, cmpMode, Creg, Dreg);		//cmp C and D
-		X86Emitter::jcc(&code, byteRelJbeMode, insertDisp((byteRelJbeSize + count) * -1)); //keep looping when C is below D
+		count += X86Emitter::parse(&code, "cmp ecx, edx");		//cmp C and D
+		X86Emitter::parse(&code, "jbe extra", insertDisp((byteRelJbeSize + count) * -1));
+//		X86Emitter::jcc(&code, byteRelJbeMode, insertDisp((byteRelJbeSize + count) * -1)); //keep looping when C is below D
 
 		X86Emitter::mov_imm(&code, dwordMovImmToBregMode, insertAddr(pstackPointer));
 		X86Emitter::parse(&code, "movzx edx, cl");
