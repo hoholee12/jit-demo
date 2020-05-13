@@ -329,6 +329,7 @@ public:
 	};
 
 	enum OperandModes{
+		noop,
 		movzxByteToDwordMode,
 		movzxWordToDwordMode,
 		movToMemaddrByteMode,
@@ -393,14 +394,14 @@ public:
 		setDwordToMemaddrMode,
 	};
 
-	void opmodeError(const char* str){ fprintf(stderr, str); fprintf(stderr, ": incompatible opmode!"); exit(1); }
+	OperandSizes opmodeError(const char* str){ fprintf(stderr, str); fprintf(stderr, ": incompatible opmode!"); exit(1); return none; }
 
 	//no need for the opposite(use only for zeroing out high area)
 	OperandSizes movzx(vect8* memoryBlock, OperandModes opmode, X86Regs src, X86Regs dest){
 		uint8_t opcode = 0xB4; //10110100
 		switch (opmode){
-		case movzxByteToDwordMode: init(memoryBlock, movzxByteToDwordSize); addExtension(); addOpcode(opcode, destToSrc, byteOnly); addModrm(forReg, src, dest); return movzxByteToDwordSize;
-		case movzxWordToDwordMode: init(memoryBlock, movzxWordToDwordSize); addExtension(); addOpcode(opcode, destToSrc, wordAndDword); addModrm(forReg, src, dest); return movzxWordToDwordSize;
+		case movzxByteToDwordMode: init(memoryBlock, movzxByteToDwordSize); addExtension(); addOpcode(opcode, destToSrc, byteOnly); addModrm(forReg, dest, src); return movzxByteToDwordSize;
+		case movzxWordToDwordMode: init(memoryBlock, movzxWordToDwordSize); addExtension(); addOpcode(opcode, destToSrc, wordAndDword); addModrm(forReg, dest, src); return movzxWordToDwordSize;
 		default: opmodeError("movzx");
 		}
 		
@@ -791,7 +792,7 @@ public:
 	}
 
 
-	using Asstype = struct{
+	using ParserType = struct{
 		OperandModes opmode;
 		Modrm modrm;
 		Sib sib;
@@ -801,7 +802,7 @@ public:
 
 	bool isByte(string* str){ if ((str->find("byte") != string::npos) || (str->find("l") != string::npos)) return true; else return false; }
 	bool isWord(string* str){ if ((str->find("word") != string::npos) || ((str->find("x") != string::npos) && (str->find("e") == string::npos))) return true; else return false; }
-	bool isDword(string* str){ if ((str->find("dword") != string::npos) || (str->find("x") != string::npos)) return true; else return false; }
+	bool isDword(string* str){ if ((str->find("dword") != string::npos) || ((str->find("x") != string::npos) && (str->find("e") != string::npos))) return true; else return false; }
 	bool isPtr(string* str){ if ((str->find("ptr") != string::npos) || (str->find("[") != string::npos)) return true; else return false; }
 	bool isImm(string* str){
 		string regNames[12] = { "al", "bl", "cl", "dl", "ax", "bx", "cx", "dx", "eax", "ebx", "ecx", "edx" };
@@ -817,28 +818,52 @@ public:
 	bool isReg(string* str){ return !isImm(str); }
 	bool isMem(string* str){ return (isImm(str) && isPtr(str)); }
 
-	void insertSrc(Asstype* asstype, string* from_str){
-		if (from_str->find("a") != string::npos) asstype->modrm.src = Areg;
-		else if (from_str->find("b") != string::npos) asstype->modrm.src = Breg;
-		else if (from_str->find("c") != string::npos) asstype->modrm.src = Creg;
-		else if (from_str->find("d") != string::npos) asstype->modrm.src = Dreg;
+	void insertSrc(ParserType* parserType, string* src_str){
+		if (src_str->find("a") != string::npos) parserType->modrm.src = Areg;
+		else if (src_str->find("b") != string::npos) parserType->modrm.src = Breg;
+		else if (src_str->find("c") != string::npos) parserType->modrm.src = Creg;
+		else if (src_str->find("d") != string::npos) parserType->modrm.src = Dreg;
 	}
-	void insertDest(Asstype* asstype, string* to_str){
-		if (to_str->find("a") != string::npos) asstype->modrm.dest = Areg;
-		else if (to_str->find("b") != string::npos) asstype->modrm.dest = Breg;
-		else if (to_str->find("c") != string::npos) asstype->modrm.dest = Creg;
-		else if (to_str->find("d") != string::npos) asstype->modrm.dest = Dreg;
+	void insertDest(ParserType* parserType, string* dest_str){
+		if (dest_str->find("a") != string::npos) parserType->modrm.dest = Areg;
+		else if (dest_str->find("b") != string::npos) parserType->modrm.dest = Breg;
+		else if (dest_str->find("c") != string::npos) parserType->modrm.dest = Creg;
+		else if (dest_str->find("d") != string::npos) parserType->modrm.dest = Dreg;
 	}
 
-	void parse_op(Asstype* asstype, string* op_str, string* to_str, string* from_str){
+	void parse_op(ParserType* parserType, string* op_str, string* src_str, string* dest_str){
 		if (!op_str->compare("movzx")){
-			if (isReg(to_str) && isReg(from_str)){
-				insertSrc(asstype, from_str); insertDest(asstype, to_str);
-				if (isByte(from_str) && isDword(to_str)) asstype->opmode = movzxByteToDwordMode;
-				else if (isWord(from_str) && isDword(to_str)) asstype->opmode = movzxWordToDwordMode;
+			if (isReg(src_str) && isReg(dest_str)){
+				insertSrc(parserType, src_str); insertDest(parserType, dest_str);
+				if (isByte(src_str) && isDword(dest_str))
+					parserType->opmode = movzxByteToDwordMode;
+				else if (isWord(src_str) && isDword(dest_str))
+					parserType->opmode = movzxWordToDwordMode;
+				
+				else parserType->opmode = noop;
 			}
 		}
-		else if(!op_str->compare("mov")){ }
+		else if(!op_str->compare("mov")){
+			if (isReg(src_str) && isReg(dest_str)){
+				insertSrc(parserType, src_str); insertDest(parserType, dest_str);
+				if (isByte(src_str) && isDword(dest_str) && isPtr(dest_str))
+					parserType->opmode = movByteRegToMemMode;
+				else if (isWord(src_str) && isDword(dest_str) && isPtr(dest_str))
+					parserType->opmode = movWordRegToMemMode;
+				else if (isDword(src_str) && isDword(dest_str) && isPtr(dest_str))
+					parserType->opmode = movDwordRegToMemMode;
+				else if (isDword(src_str) && isDword(dest_str) && !isPtr(src_str) && !isPtr(dest_str))
+					parserType->opmode = movDwordRegToRegMode;
+				else if (isByte(dest_str) && isDword(src_str) && isPtr(src_str))
+					parserType->opmode = movByteMemToRegMode;
+				else if (isWord(dest_str) && isDword(src_str) && isPtr(src_str))
+					parserType->opmode = movWordMemToRegMode;
+				else if (isDword(dest_str) && isDword(src_str) && isPtr(src_str))
+					parserType->opmode = movDwordMemToRegMode;
+
+				else parserType->opmode = noop;
+			}
+		}
 		else if(!op_str->compare("add")){ }
 		else if(!op_str->compare("sub")){ }
 		else if(!op_str->compare("and")){ }
@@ -863,24 +888,24 @@ public:
 	
 
 
-	OperandSizes run_op(vect8* memoryBlock, Asstype* asstype){
+	OperandSizes run_op(vect8* memoryBlock, ParserType* parserType){
 		//all must return OperandSizes
-		switch (asstype->opmode){
+		switch (parserType->opmode){
 		case movzxByteToDwordMode: 
-		case movzxWordToDwordMode: return movzx(memoryBlock, asstype->opmode, asstype->modrm.src, asstype->modrm.dest);
-		case movToMemaddrByteMode: 
+		case movzxWordToDwordMode: return movzx(memoryBlock, parserType->opmode, parserType->modrm.src, parserType->modrm.dest);
+		case movToMemaddrByteMode:
 		case movToMemaddrDwordMode: 
 		case movToMemaddrWordMode: 
 		case movFromMemaddrByteMode: 
 		case movFromMemaddrDwordMode: 
-		case movFromMemaddrWordMode: 
+		case movFromMemaddrWordMode: return opmodeError("not supported by parser");
 		case movDwordRegToRegMode: 
 		case movByteRegToMemMode: 
 		case movDwordRegToMemMode: 
 		case movWordRegToMemMode: 
 		case movByteMemToRegMode: 
 		case movDwordMemToRegMode: 
-		case movWordMemToRegMode: 
+		case movWordMemToRegMode: return mov(memoryBlock, parserType->opmode, parserType->modrm.src, parserType->modrm.dest);
 		case dwordMovImmToAregMode: 
 		case dwordMovImmToBregMode: 
 		case dwordMovImmToCregMode: 
@@ -930,25 +955,25 @@ public:
 	}
 
 	OperandSizes parse(vect8* memoryBlock, const char* str){
-		Asstype asstype;
+		ParserType parserType;
 		string op_str;
-		string to_str;
-		string from_str;
+		string src_str;
+		string dest_str;
 		string input;
 		input = str;
 		input = convertLowercase(&input);
-		from_str = input.substr(input.find(",") + 1);
-		from_str = trim(from_str);
+		src_str = input.substr(input.find(",") + 1);
+		src_str = trim(src_str);
 		input = input.substr(0, input.find(","));
-		to_str = input.substr(input.find(" ") + 1);
-		to_str = trim(to_str);
+		dest_str = input.substr(input.find(" ") + 1);
+		dest_str = trim(dest_str);
 		op_str = input.substr(0, input.find(" "));
 		op_str = trim(op_str);
 
 		//to op
-		parse_op(&asstype, &op_str, &to_str, &from_str);
+		parse_op(&parserType, &op_str, &src_str, &dest_str);
 
-		return run_op(memoryBlock, &asstype);
+		return run_op(memoryBlock, &parserType);
 
 	}
 
