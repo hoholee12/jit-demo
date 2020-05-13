@@ -806,14 +806,10 @@ public:
 	bool isPtr(string* str){ if ((str->find("ptr") != string::npos) || (str->find("[") != string::npos)) return true; else return false; }
 	bool isImm(string* str){
 		string regNames[12] = { "al", "bl", "cl", "dl", "ax", "bx", "cx", "dx", "eax", "ebx", "ecx", "edx" };
-		size_t shit = string::npos;
-		for (int i = 0; i < 12; i++){
-			if (str->find(regNames[i])){
-				shit = 123; //some other than npos
-			}
+		for (int i = 11; i > -1; i--){
+			if (str->find(regNames[i]) != string::npos) return false;
 		}
-		if (shit == string::npos) return true;
-		else return false;
+		return true;
 	}
 	bool isReg(string* str){ return !isImm(str); }
 	bool isMem(string* str){ return (isImm(str) && isPtr(str)); }
@@ -829,6 +825,12 @@ public:
 		else if (dest_str->find("b") != string::npos) parserType->modrm.dest = Breg;
 		else if (dest_str->find("c") != string::npos) parserType->modrm.dest = Creg;
 		else if (dest_str->find("d") != string::npos) parserType->modrm.dest = Dreg;
+	}
+	void insertImm(ParserType* parserType, string* imm_str){
+		//hex
+		if (imm_str->find("0x") != string::npos) parserType->disp.dword = (uint32_t)std::stoi(*imm_str, 0, 16);
+		//dec
+		else parserType->disp.dword = (uint32_t)std::stoi(*imm_str, 0, 10);
 	}
 
 	void parse_op(ParserType* parserType, string* op_str, string* src_str, string* dest_str){
@@ -862,6 +864,14 @@ public:
 					parserType->opmode = movDwordMemToRegMode;
 
 				else parserType->opmode = noop;
+			}
+			//mov_imm
+			else if (isImm(src_str) && isReg(dest_str) && ! isPtr(src_str)){
+				insertImm(parserType, src_str); insertDest(parserType, dest_str);
+				if (parserType->modrm.dest == Areg) parserType->opmode = dwordMovImmToAregMode;
+				else if (parserType->modrm.dest == Breg) parserType->opmode = dwordMovImmToBregMode;
+				else if (parserType->modrm.dest == Creg) parserType->opmode = dwordMovImmToCregMode;
+				else if (parserType->modrm.dest == Dreg) parserType->opmode = dwordMovImmToDregMode;
 			}
 		}
 		else if(!op_str->compare("add")){ }
@@ -909,7 +919,7 @@ public:
 		case dwordMovImmToAregMode: 
 		case dwordMovImmToBregMode: 
 		case dwordMovImmToCregMode: 
-		case dwordMovImmToDregMode: 
+		case dwordMovImmToDregMode: return mov_imm(memoryBlock, parserType->opmode, parserType->disp);
 		case dwordAddMode: 
 		case dwordAddImmToRegMode: 
 		case byteAddImmToMemaddrMode: 

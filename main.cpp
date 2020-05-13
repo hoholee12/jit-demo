@@ -31,6 +31,7 @@ public:
 		X86Emitter::mov_imm(&code, dwordMovImmToBregMode, insertAddr(pstackPointer));
 		X86Emitter::parse(&code, "movzx edx, cl");
 		X86Emitter::parse(&code, "mov BYTE PTR [ebx], al");
+		X86Emitter::parse(&code, "mov eax, 1234");
 
 		//ends here
 		X86Emitter::ret(&code);
