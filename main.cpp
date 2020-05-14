@@ -13,16 +13,19 @@ public:
 		std::vector<uint8_t> code;
 
 		//loop demo
-		X86Emitter::mov_imm(&code, dwordMovImmToDregMode, insertDisp(85)); //copy 85 to D
-
+		//X86Emitter::mov_imm(&code, dwordMovImmToDregMode, insertDisp(85)); //copy 85 to D
+		X86Emitter::parse(&code, "mov edx, extra", insertDisp(85));
+		//X86Emitter::parse(&code, "add byte ptr [edx], extra", insertDisp(-1));	//this is not supported yet!!
 		//loop starts here
 		int count = 0;
-		count += X86Emitter::mov(&code, movDwordRegToRegMode, Dreg, Areg);			//copy D to A
+		count += X86Emitter::parse(&code, "mov eax, edx");
+		//count += X86Emitter::mov(&code, movDwordRegToRegMode, Dreg, Areg);			//copy D to A
 		count += X86Emitter::storeWordArray_AregAsInput(&code, pstack, pstackPointer);		//store A to stack
 
-		count += X86Emitter::add_imm(&code, dwordAddImmToMemaddrMode, insertAddr(pstackPointer), insertDisp(1));		//increase pointer 1
+		//count += X86Emitter::add_imm(&code, byteAddImmToMemaddrMode, insertAddr(pstackPointer), insertDisp(1));		//increase pointer 1
+		count += X86Emitter::parse(&code, "add byte ptr [extra], 1", insertAddr(pstackPointer));
 
-		count += X86Emitter::add_imm(&code, dwordAddImmToRegMode, insertDisp(-1), Dreg);	//increase D 1
+		count += X86Emitter::add_imm(&code, dwordAddImmToRegMode, insertDisp(-1), Dreg);	//decrease D 1
 		count += X86Emitter::mov_imm(&code, dwordMovImmToCregMode, insertDisp(70));		//copy 100 to C
 
 		count += X86Emitter::parse(&code, "cmp ecx, edx");		//cmp C and D
