@@ -28,6 +28,10 @@ public:
 		count += X86Emitter::add_imm(&code, dwordAddImmToRegMode, insertDisp(-1), Dreg);	//decrease D 1
 		count += X86Emitter::mov_imm(&code, dwordMovImmToCregMode, insertDisp(70));		//copy 100 to C
 
+		//demo code that does nothing
+		addToMemaddr(&code, pstack, 1, Word, count);	//adds 100 to stack[0]
+		loadMemToDwordReg(&code, pstack, Areg, Byte, count); //loads stack[0] value to eax
+
 		count += X86Emitter::parse(&code, "cmp ecx, edx");		//cmp C and D
 		X86Emitter::parse(&code, "jbe extra", insertDisp((byteRelJbeSize + count) * -1));
 //		X86Emitter::jcc(&code, byteRelJbeMode, insertDisp((byteRelJbeSize + count) * -1)); //keep looping when C is below D
@@ -37,6 +41,8 @@ public:
 		X86Emitter::parse(&code, "mov BYTE PTR [ebx], al");
 		X86Emitter::parse(&code, "mov eax, 1234");
 
+		
+
 		//ends here
 		X86Emitter::ret(&code);
 
@@ -45,7 +51,9 @@ public:
 			printf("%02X ", code.at(i));
 		}
 
-	
+		int result;
+
+#ifdef _WIN32
 
 		SYSTEM_INFO system_info;
 		GetSystemInfo(&system_info);
@@ -68,14 +76,22 @@ public:
 		typedef int32_t(*dank)(void);
 		using weed = int32_t(*)(void);
 		dank function_ptr = (weed)buffer;
+
 		//auto const function_ptr = reinterpret_cast<std::int32_t(*)()>(buffer);
 
 
 		// call the function and store the result in a local std::int32_t object:
-		auto const result = function_ptr();
+		result = function_ptr();
 
 		// free the executable memory:
 		VirtualFree(buffer, 0, MEM_RELEASE);
+
+#else
+
+
+
+
+#endif
 
 		for (int i = 0; i < 0x10; i++){
 			printf("\nstack%d = %d", i, stack[i]);
