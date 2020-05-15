@@ -14,8 +14,10 @@ public:
 
 		//loop demo
 		//X86Emitter::mov_imm(&code, dwordMovImmToDregMode, insertDisp(85)); //copy 85 to D
+		
+		
+		
 		X86Emitter::parse(&code, "mov edx, extra", insertDisp(85));
-		//X86Emitter::parse(&code, "add byte ptr [edx], extra", insertDisp(-1));	//this is not supported yet!!
 		//loop starts here
 		int count = 0;
 		count += X86Emitter::parse(&code, "mov eax, edx");
@@ -27,6 +29,9 @@ public:
 
 		count += X86Emitter::add_imm(&code, dwordAddImmToRegMode, insertDisp(-1), Dreg);	//decrease D 1
 		count += X86Emitter::mov_imm(&code, dwordMovImmToCregMode, insertDisp(70));		//copy 100 to C
+
+		count += X86Emitter::parse(&code, "mov ebx, extra", insertDisp(pstack));
+		count += X86Emitter::parse(&code, "add byte ptr [ebx], extra", insertDisp(1));
 
 		//demo code that does nothing
 		addToMemaddr(&code, pstack, 1, Word, count);	//adds 100 to stack[0]
