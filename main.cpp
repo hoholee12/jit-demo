@@ -10,9 +10,8 @@ public:
 	myMain(){
 		uint16_t stack[0x10] = {0};
 		uint8_t stackPointer = 0x0;
-		uint32_t pstack = (uint32_t)&stack;		//word
-		uint32_t pstackPointer = (uint32_t)&stackPointer;	//byte
-
+		std::uintptr_t pstack = reinterpret_cast<std::uintptr_t>(&stack);		//word
+		std::uintptr_t pstackPointer = reinterpret_cast<std::uintptr_t>(&stackPointer);	//byte
 
 		std::vector<uint8_t> code;
 
