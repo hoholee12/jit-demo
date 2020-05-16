@@ -1,4 +1,6 @@
+#ifdef _WIN32
 #include <windows.h>
+#endif
 #include "X86Emitter.h"
 
 class myMain : public X86Emitter{
@@ -22,8 +24,7 @@ public:
 		int count = 0;
 		count += X86Emitter::parse(&code, "mov eax, edx");
 		//count += X86Emitter::mov(&code, movDwordRegToRegMode, Dreg, Areg);			//copy D to A
-		storeArray_AregAsInput(&code, pstack, pstackPointer, Word, count);
-		//count += X86Emitter::storeWordArray_AregAsInput(&code, pstack, pstackPointer);		//store A to stack
+		count += storeArray_AregAsInput(&code, pstack, pstackPointer, Word); //store A to stack
 
 		//count += X86Emitter::add_imm(&code, byteAddImmToMemaddrMode, insertAddr(pstackPointer), insertDisp(1));		//increase pointer 1
 		count += X86Emitter::parse(&code, "add byte ptr [extra], 1", insertAddr(pstackPointer));
@@ -34,9 +35,9 @@ public:
 		count += X86Emitter::parse(&code, "mov ebx, extra", insertDisp(pstack));
 		count += X86Emitter::parse(&code, "add byte ptr [ebx], extra", insertDisp(1));
 
-		//demo code that does nothing
-		addToMemaddr(&code, pstack, 1, Word, count);	//adds 100 to stack[0]
-		loadMemToDwordReg(&code, pstack, Areg, Byte, count); //loads stack[0] value to eax
+		//demo code
+		count += addToMemaddr(&code, pstack, 1, Word);	//adds 100 to stack[0]
+		count += loadMemToDwordReg(&code, pstack, Areg, Byte); //loads stack[0] value to eax
 
 		count += X86Emitter::parse(&code, "cmp ecx, edx");		//cmp C and D
 		X86Emitter::parse(&code, "jbe extra", insertDisp((byteRelJbeSize + count) * -1));
