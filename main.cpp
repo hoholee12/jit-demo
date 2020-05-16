@@ -22,7 +22,8 @@ public:
 		int count = 0;
 		count += X86Emitter::parse(&code, "mov eax, edx");
 		//count += X86Emitter::mov(&code, movDwordRegToRegMode, Dreg, Areg);			//copy D to A
-		count += X86Emitter::storeWordArray_AregAsInput(&code, pstack, pstackPointer);		//store A to stack
+		storeArray_AregAsInput(&code, pstack, pstackPointer, Word, count);
+		//count += X86Emitter::storeWordArray_AregAsInput(&code, pstack, pstackPointer);		//store A to stack
 
 		//count += X86Emitter::add_imm(&code, byteAddImmToMemaddrMode, insertAddr(pstackPointer), insertDisp(1));		//increase pointer 1
 		count += X86Emitter::parse(&code, "add byte ptr [extra], 1", insertAddr(pstackPointer));
@@ -45,8 +46,12 @@ public:
 		X86Emitter::parse(&code, "movzx edx, cl");
 		X86Emitter::parse(&code, "mov BYTE PTR [ebx], al");
 		X86Emitter::parse(&code, "mov eax, 1234");
-
-		
+		setToMemaddr(&code, pstackPointer, 0, Byte);
+		loadArray_AregAsResult(&code, pstack, pstackPointer, Word);
+		X86Emitter::parse(&code, "mov ebx, eax");
+		setToMemaddr(&code, pstackPointer, 1, Byte);
+		X86Emitter::parse(&code, "mov eax, ebx");
+		storeArray_AregAsInput(&code, pstack, pstackPointer, Word);
 
 		//ends here
 		X86Emitter::ret(&code);

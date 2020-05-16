@@ -677,93 +677,78 @@ public:
 #define loadMemToDwordReg_dontcount(memoryBlock, addr, Xreg, Size) {\
 	mov(memoryBlock, GLUE(movFromMemaddr, Size, Mode), Xreg, insertDisp(addr)); \
 	movzx(memoryBlock, GLUE(movzx, Size, ToDwordMode), Xreg, Xreg); \
-	}\
+			}\
 	\
 
 #define loadMemToDwordReg_count(memoryBlock, addr, Xreg, Size, count) {\
 	count += mov(memoryBlock, GLUE(movFromMemaddr, Size, Mode), Xreg, insertDisp(addr)); \
 	count += movzx(memoryBlock, GLUE(movzx, Size, ToDwordMode), Xreg, Xreg); \
-	}\
+			}\
 	\
 
-	
+
 #define loadMemToDwordReg_(memoryBlock, addr, Xreg, Size, count, FUNC, ...) FUNC
 	//easy shortcut to load to register and expand
 	//params -> memoryBlock, addr, Xreg(A/B/C/Dreg), Size(Byte/Word/Dword), count(optional for jmp size)
 #define loadMemToDwordReg(...) EXPAND(loadMemToDwordReg_(__VA_ARGS__, loadMemToDwordReg_count(__VA_ARGS__), loadMemToDwordReg_dontcount(__VA_ARGS__)))
 
-	//preferred way to load/store array elements to register, ABC regs will get occupied, backup shit before using.
-	OperandSizes loadByteArray_AregAsResult(vect8* memoryBlock, uint32_t array, uint32_t arrayptr){
-		mov_imm(memoryBlock, dwordMovImmToAregMode, insertDisp(array)); //A for array
-
-		loadMemToDwordReg(memoryBlock, arrayptr, Breg, Byte);
-		//loadByteToDwordRegB(memoryBlock, arrayptr);	//B for arrayptr
-		
-		add(memoryBlock, dwordAddMode, Areg, Breg); //B as target element addr
-		
-		mov(memoryBlock, movByteMemToRegMode, Breg, Areg);  //to Areg
-		movzx(memoryBlock, movzxByteToDwordMode, Areg, Areg);	//expand
-		return loadByteArraySize;
-	}
-	//preferred way to load/store array elements to register, ABC regs will get occupied, backup shit before using.
-	OperandSizes loadWordArray_AregAsResult(vect8* memoryBlock, uint32_t array, uint32_t arrayptr){
-		mov_imm(memoryBlock, dwordMovImmToAregMode, insertDisp(array)); //A for array
-		loadMemToDwordReg(memoryBlock, arrayptr, Breg, Byte);
-		//loadByteToDwordRegB(memoryBlock, arrayptr);	//B for arrayptr
-
-		lea(memoryBlock, leaWithoutDispMode, Breg, x2, Breg, Areg);
-
-		mov(memoryBlock, movByteMemToRegMode, Breg, Areg);  //to Areg
-		movzx(memoryBlock, movzxByteToDwordMode, Areg, Areg);	//expand
-		return loadWordArraySize;
-	}
-	//preferred way to load/store array elements to register, ABC regs will get occupied, backup shit before using.
-	OperandSizes loadDwordArray_AregAsResult(vect8* memoryBlock, uint32_t array, uint32_t arrayptr){
-		mov_imm(memoryBlock, dwordMovImmToAregMode, insertDisp(array)); //A for array
-		loadMemToDwordReg(memoryBlock, arrayptr, Breg, Byte);
-		//loadByteToDwordRegB(memoryBlock, arrayptr);	//B for arrayptr
-
-		lea(memoryBlock, leaWithoutDispMode, Breg, x4, Breg, Areg);
-
-		mov(memoryBlock, movByteMemToRegMode, Breg, Areg);  //to Areg
-		return loadDwordArraySize;
-	}
-	//preferred way to load/store array elements to register, ABC regs will get occupied, backup shit before using.
-	OperandSizes storeByteArray_AregAsInput(vect8* memoryBlock, uint32_t array, uint32_t arrayptr){
-		mov_imm(memoryBlock, dwordMovImmToBregMode, insertDisp(array)); //B for array
-		loadMemToDwordReg(memoryBlock, arrayptr, Creg, Byte);
-		//loadByteToDwordRegC(memoryBlock, arrayptr);	//C for arrayptr
-
-		add(memoryBlock, dwordAddMode, Breg, Creg); //C as target element addr
-
-		mov(memoryBlock, movByteRegToMemMode, Areg, Creg); //input to array
-		return storeByteArraySize;
-	}
-	//preferred way to load/store array elements to register, ABC regs will get occupied, backup shit before using.
-	OperandSizes storeWordArray_AregAsInput(vect8* memoryBlock, uint32_t array, uint32_t arrayptr){
-		mov_imm(memoryBlock, dwordMovImmToBregMode, insertDisp(array)); //B for array
-		loadMemToDwordReg(memoryBlock, arrayptr, Creg, Byte);
-		//loadByteToDwordRegC(memoryBlock, arrayptr);	//C for arrayptr
 
 
-		lea(memoryBlock, leaWithoutDispMode, Creg, x2, Creg, Breg);
+#define loadArrayByte(memoryBlock) add(memoryBlock, dwordAddMode, Areg, Breg)
+#define loadArrayWord(memoryBlock) lea(memoryBlock, leaWithoutDispMode, Breg, x2, Breg, Areg)
+#define loadArrayDword(memoryBlock) lea(memoryBlock, leaWithoutDispMode, Breg, x4, Breg, Areg)
 
-		mov(memoryBlock, movWordRegToMemMode, Areg, Creg); //input to array
-		return storeWordArraySize;
-	}
-	//preferred way to load/store array elements to register, ABC regs will get occupied, backup shit before using.
-	OperandSizes storeDwordArray_AregAsInput(vect8* memoryBlock, uint32_t array, uint32_t arrayptr){
-		mov_imm(memoryBlock, dwordMovImmToBregMode, insertDisp(array)); //B for array
-		loadMemToDwordReg(memoryBlock, arrayptr, Creg, Byte);
-		//loadByteToDwordRegC(memoryBlock, arrayptr); //C for arrayptr
+#define loadArray_AregAsResult_dontcount(memoryBlock, arr, arrptr, Size) {\
+	mov_imm(memoryBlock, dwordMovImmToAregMode, insertDisp(arr));\
+	loadMemToDwordReg(memoryBlock, arrptr, Breg, Byte);\
+	GLUE(loadArray, Size, (memoryBlock));\
+	mov(memoryBlock, movByteMemToRegMode, Breg, Areg);\
+	movzx(memoryBlock, movzxByteToDwordMode, Areg, Areg);\
+	}\
+	\
 
-		lea(memoryBlock, leaWithoutDispMode, Creg, x4, Creg, Breg);
+#define loadArray_AregAsResult_count(memoryBlock, arr, arrptr, Size, count) {\
+	count += mov_imm(memoryBlock, dwordMovImmToAregMode, insertDisp(arr));\
+	loadMemToDwordReg(memoryBlock, arrptr, Breg, Byte, count);\
+	count += GLUE(loadArray, Size, (memoryBlock));\
+	count += mov(memoryBlock, movByteMemToRegMode, Breg, Areg);\
+	count += movzx(memoryBlock, movzxByteToDwordMode, Areg, Areg);\
+	}\
+	\
 
-		mov(memoryBlock, movDwordRegToMemMode, Areg, Creg); //input to array
-		return storeDwordArraySize;
-	}
+#define loadArray_AregAsResult_(memoryBlock, arr, arrptr, Size, count, FUNC, ...) FUNC
+	//preferred way to load/store array elements to register, ABC regs will get occupied, backup everything there before using.
+	//params -> memoryBlock, arr, arrptr, Size(Byte/Word/Dword), count(optional for jmp size)
+#define loadArray_AregAsResult(...) EXPAND(loadArray_AregAsResult_(__VA_ARGS__, loadArray_AregAsResult_count(__VA_ARGS__), loadArray_AregAsResult_dontcount(__VA_ARGS__)))
 
-	//shortcut to change one piece of memory variable without mumbojumbo, Areg is used.
+
+
+#define storeArrayByte(memoryBlock) add(memoryBlock, dwordAddMode, Breg, Creg)
+#define storeArrayWord(memoryBlock) lea(memoryBlock, leaWithoutDispMode, Creg, x2, Creg, Breg)
+#define storeArrayDword(memoryBlock) lea(memoryBlock, leaWithoutDispMode, Creg, x4, Creg, Breg)
+
+#define storeArray_AregAsInput_dontcount(memoryBlock, arr, arrptr, Size) {\
+	mov_imm(memoryBlock, dwordMovImmToBregMode, insertDisp(arr));\
+	loadMemToDwordReg(memoryBlock, arrptr, Creg, Byte);\
+	GLUE(storeArray, Size, (memoryBlock));\
+	mov(memoryBlock, movByteRegToMemMode, Areg, Creg);\
+	}\
+	\
+
+#define storeArray_AregAsInput_count(memoryBlock, arr, arrptr, Size, count) {\
+	count += mov_imm(memoryBlock, dwordMovImmToBregMode, insertDisp(arr));\
+	loadMemToDwordReg(memoryBlock, arrptr, Creg, Byte, count);\
+	count += GLUE(storeArray, Size, (memoryBlock));\
+	count += mov(memoryBlock, movByteRegToMemMode, Areg, Creg);\
+	}\
+	\
+
+#define storeArray_AregAsInput_(memoryBlock, arr, arrptr, Size, count, FUNC, ...) FUNC
+	//preferred way to load/store array elements to register, ABC regs will get occupied, backup everything there before using.
+	//params -> memoryBlock, arr, arrptr, Size(Byte/Word/Dword), count(optional for jmp size)
+#define storeArray_AregAsInput(...) EXPAND(storeArray_AregAsInput_(__VA_ARGS__, storeArray_AregAsInput_count(__VA_ARGS__), storeArray_AregAsInput_dontcount(__VA_ARGS__)))
+
+
 
 
 #define addToMemaddr_dontcount(memoryBlock, memvar, immval, Size){\
