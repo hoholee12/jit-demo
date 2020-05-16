@@ -29,8 +29,8 @@ public:
 		//count += X86Emitter::add_imm(&code, byteAddImmToMemaddrMode, insertAddr(pstackPointer), insertDisp(1));		//increase pointer 1
 		count += X86Emitter::parse(&code, "add byte ptr [extra], 1", insertAddr(pstackPointer));
 
-		count += X86Emitter::add_imm(&code, dwordAddImmToRegMode, insertDisp(-1), Dreg);	//decrease D 1
-		count += X86Emitter::mov_imm(&code, dwordMovImmToCregMode, insertDisp(70));		//copy 100 to C
+		count += X86Emitter::Add_imm(&code, dwordAddImmToRegMode, insertDisp(-1), Dreg);	//decrease D 1
+		count += X86Emitter::Mov_imm(&code, dwordMovImmToCregMode, insertDisp(70));		//copy 100 to C
 
 		count += X86Emitter::parse(&code, "mov ebx, extra", insertDisp(pstack));
 		count += X86Emitter::parse(&code, "add byte ptr [ebx], extra", insertDisp(1));
@@ -43,7 +43,7 @@ public:
 		X86Emitter::parse(&code, "jbe extra", insertDisp((byteRelJbeSize + count) * -1));
 //		X86Emitter::jcc(&code, byteRelJbeMode, insertDisp((byteRelJbeSize + count) * -1)); //keep looping when C is below D
 
-		X86Emitter::mov_imm(&code, dwordMovImmToBregMode, insertAddr(pstackPointer));
+		X86Emitter::Mov_imm(&code, dwordMovImmToBregMode, insertAddr(pstackPointer));
 		X86Emitter::parse(&code, "movzx edx, cl");
 		X86Emitter::parse(&code, "mov BYTE PTR [ebx], al");
 		X86Emitter::parse(&code, "mov eax, 1234");
@@ -55,7 +55,7 @@ public:
 		storeArray_AregAsInput(&code, pstack, pstackPointer, Word);
 
 		//ends here
-		X86Emitter::ret(&code);
+		X86Emitter::Ret(&code);
 
 		//print block
 		for (int i = 0; i < code.size(); i++){
