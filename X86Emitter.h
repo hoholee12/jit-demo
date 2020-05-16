@@ -131,10 +131,10 @@
 
 #include<iostream>
 #include<vector>
-#include<stdint.h>
+#include<cstdint>
 #include<string>
 
-
+#pragma warning(disable: 4018)
 using vect8 = std::vector<uint8_t>; //tryinig really hard to shorten code here;-;
 
 class X86Emitter{
@@ -143,7 +143,7 @@ private:
 	vect8* memoryBlock;
 	
 	//host endianness sensitive
-	typedef union{
+	using ByteRegs = union{
 		struct{
 			uint8_t byte0;
 			uint8_t byte1;
@@ -153,7 +153,7 @@ private:
 		uint8_t byte;
 		uint16_t word;
 		uint32_t dword;
-	} ByteRegs;
+	};
 	ByteRegs byteRegs;
 
 	void addByte(uint8_t byte){
@@ -221,7 +221,7 @@ public:
 
 
 	//sib
-	enum Scale{ x1 = 0x0, x2 = 0x1, x4 = 0x2, x8 = 0x3 };
+	using Scale = enum{ x1 = 0x0, x2 = 0x1, x4 = 0x2, x8 = 0x3 };
 	using Index = X86Regs;
 	using Base = X86Regs;
 	using Sib = struct{
@@ -263,7 +263,7 @@ public:
 	}
 
 	//use this template for jmp instructions
-	enum OperandSizes{
+	using OperandSizes = enum{
 		none = 0,
 		movzxByteToDwordSize = 3,
 		movzxWordToDwordSize = 3,
@@ -334,7 +334,7 @@ public:
 		setDwordToMemaddrSize = dwordMovImmToAregSize + movToMemaddrDwordSize,
 	};
 
-	enum OperandModes{
+	using OperandModes = enum{
 		noop,
 		movzxByteToDwordMode,
 		movzxWordToDwordMode,
@@ -668,7 +668,7 @@ public:
 
 		*/
 	//easy shortcut to load to register and expand
-	typedef enum{Byte, Word, Dword} ExpandSizes;
+	using ExpandSizes = enum{ Byte, Word, Dword };
 
 	OperandSizes loadMemToDwordReg(vect8* memoryBlock, uint32_t addr, X86Regs Xreg, ExpandSizes Size){
 		switch (Size){
