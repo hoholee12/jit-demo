@@ -133,6 +133,7 @@
 #include<vector>
 #include<cstdint>
 #include<string>
+#include<cstring>
 
 #pragma warning(disable: 4018)
 using vect8 = std::vector<uint8_t>; //tryinig really hard to shorten code here;-;
@@ -406,7 +407,7 @@ public:
 		setDwordToMemaddrMode,
 	};
 
-	OperandSizes opmodeError(const char* str, std::string str2 = std::string()){ fprintf(stderr, str); fprintf(stderr, ": incompatible opmode! -> "); fprintf(stderr, str2.c_str()); exit(1); return none; }
+	OperandSizes opmodeError(const char* str, std::string str2 = std::string()){ fprintf(stderr, "%s", str); fprintf(stderr, ": incompatible opmode! -> "); fprintf(stderr, "%s", str2.c_str()); exit(1); return none; }
 
 	//no need for the opposite(use only for zeroing out high area)
 	OperandSizes Movzx(vect8* memoryBlock, OperandModes opmode, X86Regs src, X86Regs dest){

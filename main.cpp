@@ -1,5 +1,7 @@
 #ifdef _WIN32
 #include <windows.h>
+#else
+#include <sys/mman.h>
 #endif
 #include "X86Emitter.h"
 
@@ -62,7 +64,7 @@ public:
 			printf("%02X ", code.at(i));
 		}
 
-		int result;
+		int result = 0;
 
 #ifdef _WIN32
 
@@ -74,7 +76,7 @@ public:
 		void* buffer = VirtualAlloc(nullptr, page_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
 		// copy the machine code into that memory:
-		std::memcpy(buffer, code.data(), code.size());
+		memcpy(buffer, code.data(), code.size());
 
 		// mark the memory as executable:
 		DWORD dummy;
@@ -98,9 +100,20 @@ public:
 		VirtualFree(buffer, 0, MEM_RELEASE);
 
 #else
+		void *buffer = mmap(NULL,             // address
+			4096,             // size
+			PROT_READ | PROT_WRITE | PROT_EXEC,
+			MAP_PRIVATE | MAP_ANONYMOUS,
+			-1,               // fd (not used here)
+			0);               // offset (not used here)
 
+		memcpy(buffer, code.data(), code.size());
+		
+		typedef int32_t(*dank)(void);
+		using weed = int32_t(*)(void);
+		dank function_ptr = (weed)buffer;
 
-
+		result = function_ptr();
 
 #endif
 
