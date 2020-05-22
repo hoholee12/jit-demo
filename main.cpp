@@ -6,61 +6,68 @@
 #include "X86Emitter.h"
 
 class myMain : public X86Emitter{
+
+private:
+	//they are accessed by external block of program so never optimize away!!
+	volatile uint16_t stack[0x10];
+	volatile uint8_t stackPointer = 0x0;
+
+	std::uintptr_t pstack = reinterpret_cast<std::uintptr_t>(&stack);		//word
+	std::uintptr_t pstackPointer = reinterpret_cast<std::uintptr_t>(&stackPointer);	//byte
+
+	std::vector<uint8_t>* code = new std::vector<uint8_t>();
+
 public:
 	myMain(){
-		uint16_t stack[0x10] = {0};
-		uint8_t stackPointer = 0x0;
-		std::uintptr_t pstack = reinterpret_cast<std::uintptr_t>(&stack);		//word
-		std::uintptr_t pstackPointer = reinterpret_cast<std::uintptr_t>(&stackPointer);	//byte
-
-		std::vector<uint8_t> code;
+		//std::memcpy(stack, 0, sizeof(stack)); //memcpy doesnt work with non-POD apparently
+		
 
 		//loop demo
 		//X86Emitter::mov_imm(&code, dwordMovImmToDregMode, insertDisp(85)); //copy 85 to D
 		
 		
 		
-		X86Emitter::parse(&code, "mov edx, extra", insertDisp(85));
+		X86Emitter::parse(code, "mov edx, extra", insertDisp(85));
 		//loop starts here
 		int count = 0;
-		count += X86Emitter::parse(&code, "mov eax, edx");
+		count += X86Emitter::parse(code, "mov eax, edx");
 		//count += X86Emitter::mov(&code, movDwordRegToRegMode, Dreg, Areg);			//copy D to A
-		count += storeArray_AregAsInput(&code, pstack, pstackPointer, Word); //store A to stack
+		count += storeArray_AregAsInput(code, pstack, pstackPointer, Word); //store A to stack
 
 		//count += X86Emitter::add_imm(&code, byteAddImmToMemaddrMode, insertAddr(pstackPointer), insertDisp(1));		//increase pointer 1
-		count += X86Emitter::parse(&code, "add byte ptr [extra], 1", insertAddr(pstackPointer));
+		count += X86Emitter::parse(code, "add byte ptr [extra], 1", insertAddr(pstackPointer));
 
-		count += X86Emitter::Add_imm(&code, dwordAddImmToRegMode, insertDisp(-1), Dreg);	//decrease D 1
-		count += X86Emitter::Mov_imm(&code, dwordMovImmToCregMode, insertDisp(70));		//copy 100 to C
+		count += X86Emitter::Add_imm(code, dwordAddImmToRegMode, insertDisp(-1), Dreg);	//decrease D 1
+		count += X86Emitter::Mov_imm(code, dwordMovImmToCregMode, insertDisp(70));		//copy 100 to C
 
-		count += X86Emitter::parse(&code, "mov ebx, extra", insertDisp(pstack));
-		count += X86Emitter::parse(&code, "add byte ptr [ebx], extra", insertDisp(1));
+		count += X86Emitter::parse(code, "mov ebx, extra", insertDisp(pstack));
+		count += X86Emitter::parse(code, "add byte ptr [ebx], extra", insertDisp(1));
 
 		//demo code
-		count += addToMemaddr(&code, pstack, 1, Word);	//adds 100 to stack[0]
-		count += loadMemToDwordReg(&code, pstack, Areg, Byte); //loads stack[0] value to eax
+		count += addToMemaddr(code, pstack, 1, Word);	//adds 100 to stack[0]
+		count += loadMemToDwordReg(code, pstack, Areg, Byte); //loads stack[0] value to eax
 
-		count += X86Emitter::parse(&code, "cmp ecx, edx");		//cmp C and D
-		X86Emitter::parse(&code, "jbe extra", insertDisp((byteRelJbeSize + count) * -1));
+		count += X86Emitter::parse(code, "cmp ecx, edx");		//cmp C and D
+		X86Emitter::parse(code, "jbe extra", insertDisp((byteRelJbeSize + count) * -1));
 //		X86Emitter::jcc(&code, byteRelJbeMode, insertDisp((byteRelJbeSize + count) * -1)); //keep looping when C is below D
 
-		X86Emitter::Mov_imm(&code, dwordMovImmToBregMode, insertAddr(pstackPointer));
-		X86Emitter::parse(&code, "movzx edx, cl");
-		X86Emitter::parse(&code, "mov BYTE PTR [ebx], al");
-		X86Emitter::parse(&code, "mov eax, 1234");
-		setToMemaddr(&code, pstackPointer, 0, Byte);
-		loadArray_AregAsResult(&code, pstack, pstackPointer, Word);
-		X86Emitter::parse(&code, "mov ebx, eax");
-		setToMemaddr(&code, pstackPointer, 1, Byte);
-		X86Emitter::parse(&code, "mov eax, ebx");
-		storeArray_AregAsInput(&code, pstack, pstackPointer, Word);
+		X86Emitter::Mov_imm(code, dwordMovImmToBregMode, insertAddr(pstackPointer));
+		X86Emitter::parse(code, "movzx edx, cl");
+		X86Emitter::parse(code, "mov BYTE PTR [ebx], al");
+		X86Emitter::parse(code, "mov eax, 1234");
+		setToMemaddr(code, pstackPointer, 0, Byte);
+		loadArray_AregAsResult(code, pstack, pstackPointer, Word);
+		X86Emitter::parse(code, "mov ebx, eax");
+		setToMemaddr(code, pstackPointer, 1, Byte);
+		X86Emitter::parse(code, "mov eax, ebx");
+		storeArray_AregAsInput(code, pstack, pstackPointer, Word);
 
 		//ends here
-		X86Emitter::Ret(&code);
+		X86Emitter::Ret(code);
 
 		//print block
-		for (int i = 0; i < code.size(); i++){
-			printf("%02X ", code.at(i));
+		for (int i = 0; i < code->size(); i++){
+			printf("%02X ", code->at(i));
 		}
 
 		int result = 0;
@@ -75,11 +82,11 @@ public:
 		void* buffer = VirtualAlloc(nullptr, page_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
 		// copy the machine code into that memory:
-		memcpy(buffer, code.data(), code.size());
+		memcpy(buffer, code->data(), code->size());
 
 		// mark the memory as executable:
 		DWORD dummy;
-		VirtualProtect(buffer, code.size(), PAGE_EXECUTE_READ, &dummy);
+		VirtualProtect(buffer, code->size(), PAGE_EXECUTE_READ, &dummy);
 
 		// interpret the beginning of the (now) executable memory as the entry
 		// point of a function taking no arguments and returning a 4-byte int:
@@ -106,7 +113,7 @@ public:
 			-1,               // fd (not used here)
 			0);               // offset (not used here)
 
-		memcpy(buffer, code.data(), code.size());
+		memcpy(buffer, code->data(), code->size());
 		
 		typedef int32_t(*dank)(void);
 		using weed = int32_t(*)(void);
