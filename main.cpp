@@ -29,9 +29,9 @@ public:
 
 		//loop demo
 		//X86Emitter::mov_imm(&code, dwordMovImmToDregMode, insertDisp(85)); //copy 85 to D
-		
-		
-		
+
+
+
 		X86Emitter::parse(code, "mov edx, extra", insertDisp(85));
 		//loop starts here
 		int count = 0;
@@ -54,7 +54,7 @@ public:
 
 		count += X86Emitter::parse(code, "cmp ecx, edx");		//cmp C and D
 		X86Emitter::parse(code, "jbe extra", insertDisp((byteRelJbeSize + count) * -1));
-//		X86Emitter::jcc(&code, byteRelJbeMode, insertDisp((byteRelJbeSize + count) * -1)); //keep looping when C is below D
+		//		X86Emitter::jcc(&code, byteRelJbeMode, insertDisp((byteRelJbeSize + count) * -1)); //keep looping when C is below D
 
 		X86Emitter::Mov_imm(code, dwordMovImmToBregMode, insertAddr(pstackPointer));
 		X86Emitter::parse(code, "movzx edx, cl");
@@ -67,15 +67,25 @@ public:
 		X86Emitter::parse(code, "mov eax, ebx");
 		storeArray_AregAsInput(code, pstack, pstackPointer, Word);
 
+		X86Emitter::parse(code, "add WORD PTR [extra], eax", insertAddr(pstackPointer));
+
 		//ends here
 		X86Emitter::Ret(code);
+
+		
+
+	
+	}
+
+	void execute(){
+
+		vect8* code = &bigcode.at(0);
+		int result = 0;
 
 		//print block
 		for (int i = 0; i < code->size(); i++){
 			printf("%02X ", code->at(i));
 		}
-
-		int result = 0;
 
 #ifdef _WIN32
 
@@ -163,5 +173,6 @@ int main()
 	*/
 
 	myMain* my = new myMain();
+	my->execute();
 	return 0;
 }
