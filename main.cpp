@@ -8,11 +8,12 @@
 class myMain : public X86Emitter{
 
 private:
-	//they are accessed by external block of program so never optimize away!!
-	volatile uint16_t stack[0x10];
-	volatile uint8_t stackPointer = 0x0;
+	
+	uint16_t stack[0x10];
+	uint8_t stackPointer = 0x0;
 
-	uint32_t pstack = (uint32_t)&stack;		//word
+
+	uint32_t pstack = (uint32_t)stack;		//word
 	uint32_t pstackPointer = (uint32_t)&stackPointer;	//byte
 
 	std::vector<vect8> bigcode;
@@ -32,6 +33,7 @@ public:
 
 		X86Emitter::BlockInitializer(code);
 
+		
 		X86Emitter::parse(code, "mov ebx, extra", insertDisp(85));
 		//loop starts here
 		int count = 0;
