@@ -972,6 +972,9 @@ public:
 		-----check type/get (src/dest)
 		---------check size (src/dest) - always ptr first!!!
 		-------------set opmode
+
+		*only two operands allowed
+		*one operand opcodes will use dest_src
 	*/
 	void parse_op(ParserType* parserType, string* op_str, string* src_str, string* dest_str, Disp extra) const{
 		if (!op_str->compare("movzx")){
