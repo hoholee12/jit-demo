@@ -40,7 +40,7 @@ public:
 		count += X86Emitter::parse(code, "mov eax, ebx");
 		
 		//count += X86Emitter::mov(&code, movDwordRegToRegMode, Dreg, Areg);			//copy D to A
-		count += storeArray_AregAsInput(code, pstack, pstackPointer, Word); //store A to stack
+		count += storeArray_AregAsInput(code, pstack, pstackPointer, false, Word); //store A to stack
 		
 		//count += X86Emitter::add_imm(&code, byteAddImmToMemaddrMode, insertAddr(pstackPointer), insertDisp(1));		//increase pointer 1
 		count += X86Emitter::parse(code, "add byte ptr [extra], 1", insertAddr(pstackPointer));
@@ -55,29 +55,31 @@ public:
 
 		
 		count += X86Emitter::Add_imm(code, dwordAddImmToRegMode, insertDisp(-1), Breg);	//decrease B 1
-		count += X86Emitter::Mov_imm(code, dwordMovImmToRegMode, Creg, insertDisp(70));		//copy 100 to C
+		count += X86Emitter::Mov_imm(code, movDwordImmToRegMode, Creg, insertDisp(70));		//copy 100 to C
 
 		
 		count += X86Emitter::parse(code, "cmp ecx, ebx");		//cmp C and D
 		X86Emitter::parse(code, "jbe extra", insertDisp((byteRelJbeSize + count) * -1));
 		//X86Emitter::Jcc(code, byteRelJbeMode, insertDisp((byteRelJbeSize + count) * -1)); //keep looping when C is below D
 		
-		X86Emitter::Mov_imm(code, dwordMovImmToRegMode, Breg, insertAddr(pstackPointer));
+		X86Emitter::Mov_imm(code, movDwordImmToRegMode, Breg, insertAddr(pstackPointer));
 		X86Emitter::parse(code, "movzx edx, cl");
 		X86Emitter::parse(code, "mov BYTE PTR [ebx], al");
 		X86Emitter::parse(code, "mov eax, 1234");
 		X86Emitter::setToMemaddr(code, pstackPointer, 0, Byte);
-		X86Emitter::loadArray_AregAsResult(code, pstack, pstackPointer, Word);
+		X86Emitter::loadArray_AregAsResult(code, pstack, pstackPointer, false, Word);
 		X86Emitter::parse(code, "mov ebx, eax");
 		X86Emitter::setToMemaddr(code, pstackPointer, 1, Byte);
 		X86Emitter::parse(code, "mov eax, ebx");
 		
 		
 		X86Emitter::setToMemaddr(code, pstackPointer, 3, Byte);
-		X86Emitter::loadArray_AregAsResult(code, pstack, pstackPointer, Word);
+		X86Emitter::loadArray_AregAsResult(code, pstack, pstackPointer, false, Word);
 		X86Emitter::Lea(code, leaWithoutDispMode, Areg, x4, Areg, Areg);
 		X86Emitter::parse(code, "add BYTE PTR [extra], eax", insertAddr(pstackPointer));
 		
+
+		X86Emitter::parse(code, "call eax");
 		//ends here
 		X86Emitter::BlockFinisher(code);
 

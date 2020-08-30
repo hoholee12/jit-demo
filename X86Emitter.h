@@ -135,6 +135,7 @@
 #include<cstdint>
 #include<string>
 #include<cstring>
+#include<type_traits>
 
 #pragma warning(disable: 4018)
 using vect8 = std::vector<uint8_t>; //tryinig really hard to shorten code here;-;
@@ -217,14 +218,17 @@ public:
 		};
 		_Disp(){ this->dword = 0; }	//give this a constructor for '= Disp()'
 
-		void operator=(uint32_t dword){ this->dword = dword; }
-		void operator=(uint16_t word){ this->word = word; }
-		void operator=(uint8_t byte){ this->byte = byte; }
-
 	};
 
-	Disp insertDisp(int temp) const{ Disp disp; disp = (uint32_t)temp; return disp; }
-	Disp insertAddr(int temp) const{ return insertDisp(temp); }
+	template<typename disptype>
+	Disp insertDisp(disptype temp) const{
+		Disp disp;
+		if (sizeof(disptype) == sizeof(uint8_t)) disp.byte = (uint8_t)temp;
+		else if (sizeof(disptype) == sizeof(uint16_t)) disp.word = (uint16_t)temp;
+		else disp.dword = (uint32_t)temp;
+		return disp;
+	}
+	template<typename disptype>Disp insertAddr(disptype temp) const{ return insertDisp(temp); }
 
 
 	//sib
@@ -346,6 +350,7 @@ public:
 		leaWithDispSize = 7,
 		leaWithoutDispSize = 3,
 
+		dwordCallSize = 2,
 		retSize = 1,
 		nopSize = 1,
 
@@ -428,6 +433,7 @@ public:
 		leaWithDispMode,
 		leaWithoutDispMode,
 
+		dwordCallMode,
 		retMode,
 		nopMode,
 
@@ -709,7 +715,10 @@ public:
 	//ja	jump greater unsigned
 	//jae	jump greater equals unsigned
 	
-	
+	//far call
+	OperandSizes Call(vect8* memoryBlock, OperandModes opmode, X86Regs dest) const{ 
+		init(memoryBlock, dwordCallSize); addByte(0xFF); addByte(0xD0 | dest); return dwordCallSize;
+	}
 	
 
 	//return from eax
@@ -1243,6 +1252,14 @@ public:
 		else if(!op_str->compare("lea")){
 			parserType->opmode = leaWithDispMode;
 		}
+		else if (!op_str->compare("call")){
+			if (isReg(dest_str)){
+				if (isDword(dest_str)){
+					parserType->opmode = dwordCallMode;
+					insertDest(parserType, dest_str);
+				}
+			}
+		}
 
 	}
 
@@ -1306,6 +1323,7 @@ public:
 
 		case retMode: return Ret(memoryBlock);
 		case nopMode: return Nop(memoryBlock);
+		case dwordCallMode: return Call(memoryBlock, parserType->opmode, parserType->modrm.dest);
 		
 		default: opmodeError("parse", str); return none;
 		}
